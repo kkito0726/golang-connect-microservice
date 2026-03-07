@@ -1,0 +1,186 @@
+syntax = "proto3";
+
+package product.v1;
+
+option go_package = "github.com/ken/connect-microservice/gen/product/v1;productv1";
+
+import "google/protobuf/timestamp.proto";
+
+// StockChangeReason describes why a stock level changed.
+enum StockChangeReason {
+  STOCK_CHANGE_REASON_UNSPECIFIED = 0;
+  // New inventory received from supplier.
+  STOCK_CHANGE_REASON_RESTOCK = 1;
+  // Stock deducted due to a sale/order.
+  STOCK_CHANGE_REASON_SALE = 2;
+  // Manual adjustment by an administrator.
+  STOCK_CHANGE_REASON_ADJUSTMENT = 3;
+  // Stock restored due to an order cancellation or return.
+  STOCK_CHANGE_REASON_RETURN = 4;
+}
+
+// Product represents an item in the inventory catalog.
+message Product {
+  // Unique identifier (UUID).
+  string id = 1;
+  // Stock Keeping Unit code (unique per active product).
+  string sku = 2;
+  // Product display name.
+  string name = 3;
+  // Detailed description.
+  string description = 4;
+  // Price in cents (e.g. 199900 = $1,999.00). Avoids floating-point precision issues.
+  int64 price_cents = 5;
+  // Current stock quantity. Always >= 0.
+  int32 stock_quantity = 6;
+  // Product category for filtering.
+  string category = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+}
+
+// StockMovement is an audit log entry recording a single stock change.
+message StockMovement {
+  // Unique identifier (UUID).
+  string id = 1;
+  // Product whose stock changed.
+  string product_id = 2;
+  // Change amount. Positive = increase, negative = decrease.
+  int32 delta = 3;
+  // Why the stock changed.
+  StockChangeReason reason = 4;
+  // Optional reference to a related entity (e.g. order ID).
+  string reference_id = 5;
+  google.protobuf.Timestamp created_at = 6;
+}
+
+// CreateProductRequest is the request message for registering a new product.
+message CreateProductRequest {
+  // SKU code (must be unique).
+  string sku = 1;
+  // Product name.
+  string name = 2;
+  // Optional description.
+  string description = 3;
+  // Price in cents.
+  int64 price_cents = 4;
+  // Initial stock quantity.
+  int32 stock_quantity = 5;
+  // Optional category.
+  string category = 6;
+}
+
+// CreateProductResponse is the response for CreateProduct.
+message CreateProductResponse {
+  Product product = 1;
+}
+
+// GetProductRequest is the request for fetching a product by ID.
+message GetProductRequest {
+  // UUID of the product.
+  string id = 1;
+}
+
+// GetProductResponse is the response for GetProduct.
+message GetProductResponse {
+  Product product = 1;
+}
+
+// ListProductsRequest is the request for listing products with optional filtering.
+message ListProductsRequest {
+  // Maximum number of products to return (default: 20).
+  int32 page_size = 1;
+  // Page number (1-based, default: 1).
+  int32 page = 2;
+  // Optional category filter. Empty string means no filter.
+  string category = 3;
+}
+
+// ListProductsResponse is the response for ListProducts.
+message ListProductsResponse {
+  repeated Product products = 1;
+  int32 total_count = 2;
+}
+
+// UpdateProductRequest is the request for updating product metadata (not stock).
+message UpdateProductRequest {
+  // UUID of the product to update.
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  // New price in cents.
+  int64 price_cents = 4;
+  string category = 5;
+}
+
+// UpdateProductResponse is the response for UpdateProduct.
+message UpdateProductResponse {
+  Product product = 1;
+}
+
+// DeleteProductRequest is the request for soft-deleting a product.
+message DeleteProductRequest {
+  string id = 1;
+}
+
+// DeleteProductResponse is the response for DeleteProduct (empty on success).
+message DeleteProductResponse {}
+
+// UpdateStockRequest adjusts the stock level atomically using SELECT ... FOR UPDATE.
+message UpdateStockRequest {
+  // UUID of the product.
+  string product_id = 1;
+  // Amount to change. Positive adds stock, negative removes stock.
+  int32 delta = 2;
+  // Reason for the change.
+  StockChangeReason reason = 3;
+  // Optional reference ID (e.g. order ID that caused this change).
+  string reference_id = 4;
+}
+
+// UpdateStockResponse contains the updated product and the new movement record.
+message UpdateStockResponse {
+  // Product with updated stock_quantity.
+  Product product = 1;
+  // The stock movement audit record that was created.
+  StockMovement movement = 2;
+}
+
+// GetStockLevelRequest retrieves the current stock and recent movements.
+message GetStockLevelRequest {
+  string product_id = 1;
+}
+
+// GetStockLevelResponse contains the current stock level and recent audit trail.
+message GetStockLevelResponse {
+  string product_id = 1;
+  // Current stock quantity.
+  int32 stock_quantity = 2;
+  // Up to 10 most recent stock movements.
+  repeated StockMovement recent_movements = 3;
+}
+
+// ProductService manages the product catalog and inventory.
+//
+// Base URL: http://localhost:8081
+service ProductService {
+  // CreateProduct registers a new product in the catalog.
+  // Returns ALREADY_EXISTS if the SKU is taken.
+  rpc CreateProduct(CreateProductRequest) returns (CreateProductResponse);
+  // GetProduct fetches a product by ID.
+  // Returns NOT_FOUND if the product does not exist or is deleted.
+  rpc GetProduct(GetProductRequest) returns (GetProductResponse);
+  // ListProducts returns a paginated, optionally filtered list of products.
+  rpc ListProducts(ListProductsRequest) returns (ListProductsResponse);
+  // UpdateProduct updates product metadata (name, description, price, category).
+  // Does NOT change stock. Use UpdateStock for inventory changes.
+  rpc UpdateProduct(UpdateProductRequest) returns (UpdateProductResponse);
+  // DeleteProduct performs a soft delete.
+  rpc DeleteProduct(DeleteProductRequest) returns (DeleteProductResponse);
+  // UpdateStock atomically adjusts a product's stock level.
+  // Uses SELECT ... FOR UPDATE to prevent race conditions.
+  // Returns FAILED_PRECONDITION if stock would go negative.
+  rpc UpdateStock(UpdateStockRequest) returns (UpdateStockResponse);
+  // GetStockLevel returns the current stock and recent movement history.
+  rpc GetStockLevel(GetStockLevelRequest) returns (GetStockLevelResponse);
+}

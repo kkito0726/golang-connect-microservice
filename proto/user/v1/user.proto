@@ -1,0 +1,123 @@
+syntax = "proto3";
+
+package user.v1;
+
+option go_package = "github.com/ken/connect-microservice/gen/user/v1;userv1";
+
+import "google/protobuf/timestamp.proto";
+
+// Role represents the user's role in the system.
+enum Role {
+  // Default unspecified value.
+  ROLE_UNSPECIFIED = 0;
+  // A regular customer who can place orders.
+  ROLE_CUSTOMER = 1;
+  // An administrator with full access.
+  ROLE_ADMIN = 2;
+}
+
+// User represents a registered user in the inventory management system.
+message User {
+  // Unique identifier (UUID).
+  string id = 1;
+  // Email address (unique per active user).
+  string email = 2;
+  // Display name.
+  string name = 3;
+  // User role.
+  Role role = 4;
+  // Timestamp when the user was created.
+  google.protobuf.Timestamp created_at = 5;
+  // Timestamp when the user was last updated.
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+// CreateUserRequest is the request message for creating a new user.
+message CreateUserRequest {
+  // Email address (must be unique).
+  string email = 1;
+  // Display name.
+  string name = 2;
+  // Plain-text password (hashed server-side with bcrypt).
+  string password = 3;
+  // Role to assign. Defaults to ROLE_CUSTOMER if unspecified.
+  Role role = 4;
+}
+
+// CreateUserResponse is the response message for CreateUser.
+message CreateUserResponse {
+  // The newly created user.
+  User user = 1;
+}
+
+// GetUserRequest is the request message for fetching a single user.
+message GetUserRequest {
+  // UUID of the user to fetch.
+  string id = 1;
+}
+
+// GetUserResponse is the response message for GetUser.
+message GetUserResponse {
+  User user = 1;
+}
+
+// ListUsersRequest is the request message for listing users with pagination.
+message ListUsersRequest {
+  // Maximum number of users to return (default: 20).
+  int32 page_size = 1;
+  // Page number (1-based, default: 1).
+  int32 page = 2;
+}
+
+// ListUsersResponse is the response message for ListUsers.
+message ListUsersResponse {
+  // List of users for the current page.
+  repeated User users = 1;
+  // Total number of active users.
+  int32 total_count = 2;
+}
+
+// UpdateUserRequest is the request message for updating user profile.
+message UpdateUserRequest {
+  // UUID of the user to update.
+  string id = 1;
+  // New display name.
+  string name = 2;
+  // New email address.
+  string email = 3;
+}
+
+// UpdateUserResponse is the response message for UpdateUser.
+message UpdateUserResponse {
+  // The updated user.
+  User user = 1;
+}
+
+// DeleteUserRequest is the request message for soft-deleting a user.
+message DeleteUserRequest {
+  // UUID of the user to delete.
+  string id = 1;
+}
+
+// DeleteUserResponse is the response message for DeleteUser (empty on success).
+message DeleteUserResponse {}
+
+// UserService manages user registration and profiles.
+//
+// Base URL: http://localhost:8080
+service UserService {
+  // CreateUser registers a new user.
+  // Returns ALREADY_EXISTS if the email is taken.
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+  // GetUser fetches a user by ID.
+  // Returns NOT_FOUND if the user does not exist or is deleted.
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+  // ListUsers returns a paginated list of active users.
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
+  // UpdateUser updates the user's name and email.
+  // Returns NOT_FOUND if the user does not exist.
+  rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
+  // DeleteUser performs a soft delete on the user.
+  // Returns NOT_FOUND if the user does not exist.
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+}

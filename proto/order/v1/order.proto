@@ -1,0 +1,158 @@
+syntax = "proto3";
+
+package order.v1;
+
+option go_package = "github.com/ken/connect-microservice/gen/order/v1;orderv1";
+
+import "google/protobuf/timestamp.proto";
+
+// OrderStatus represents the lifecycle of an order.
+//
+// State transitions:
+//   PENDING -> CONFIRMED (after payment)
+//   CONFIRMED -> SHIPPED -> DELIVERED
+//   PENDING -> CANCELLED (by user or refund)
+enum OrderStatus {
+  ORDER_STATUS_UNSPECIFIED = 0;
+  // Order created, awaiting payment.
+  ORDER_STATUS_PENDING = 1;
+  // Payment received, order confirmed.
+  ORDER_STATUS_CONFIRMED = 2;
+  // Order shipped to customer.
+  ORDER_STATUS_SHIPPED = 3;
+  // Order delivered to customer.
+  ORDER_STATUS_DELIVERED = 4;
+  // Order cancelled. Stock has been restored.
+  ORDER_STATUS_CANCELLED = 5;
+}
+
+// OrderItem represents a single line item in an order.
+message OrderItem {
+  // Unique identifier (UUID).
+  string id = 1;
+  // UUID of the product.
+  string product_id = 2;
+  // Product name at time of order (denormalized for history).
+  string product_name = 3;
+  // Number of units ordered.
+  int32 quantity = 4;
+  // Price per unit in cents at time of order.
+  int64 unit_price_cents = 5;
+}
+
+// Order represents a customer order with line items.
+message Order {
+  // Unique identifier (UUID).
+  string id = 1;
+  // UUID of the user who placed the order.
+  string user_id = 2;
+  // Current order status.
+  OrderStatus status = 3;
+  // Line items in this order.
+  repeated OrderItem items = 4;
+  // Total order amount in cents (sum of quantity * unit_price_cents).
+  int64 total_cents = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+}
+
+// CreateOrderRequest places a new order.
+// The order-service will:
+//   1. Verify the user exists (via user-service)
+//   2. Fetch product details and verify stock (via product-service)
+//   3. Deduct stock for each item (via product-service UpdateStock)
+//   4. Create the order record with status PENDING
+message CreateOrderRequest {
+  // UUID of the user placing the order.
+  string user_id = 1;
+  // Items to order.
+  repeated CreateOrderItem items = 2;
+}
+
+// CreateOrderItem specifies a product and quantity for a new order.
+message CreateOrderItem {
+  // UUID of the product to order.
+  string product_id = 1;
+  // Number of units to order. Must be > 0.
+  int32 quantity = 2;
+}
+
+// CreateOrderResponse is the response for CreateOrder.
+message CreateOrderResponse {
+  // The newly created order with status PENDING.
+  Order order = 1;
+}
+
+// GetOrderRequest fetches a single order by ID.
+message GetOrderRequest {
+  string id = 1;
+}
+
+// GetOrderResponse is the response for GetOrder.
+message GetOrderResponse {
+  Order order = 1;
+}
+
+// ListOrdersRequest lists orders with optional filters and pagination.
+message ListOrdersRequest {
+  // Optional: filter by user ID. Empty means all users.
+  string user_id = 1;
+  // Optional: filter by status. UNSPECIFIED means all statuses.
+  OrderStatus status = 2;
+  // Maximum number of orders to return (default: 20).
+  int32 page_size = 3;
+  // Page number (1-based, default: 1).
+  int32 page = 4;
+}
+
+// ListOrdersResponse is the response for ListOrders.
+message ListOrdersResponse {
+  repeated Order orders = 1;
+  int32 total_count = 2;
+}
+
+// UpdateOrderStatusRequest manually transitions an order's status.
+message UpdateOrderStatusRequest {
+  // UUID of the order.
+  string id = 1;
+  // New status to set.
+  OrderStatus status = 2;
+}
+
+// UpdateOrderStatusResponse is the response for UpdateOrderStatus.
+message UpdateOrderStatusResponse {
+  Order order = 1;
+}
+
+// CancelOrderRequest cancels a pending order and restores stock.
+message CancelOrderRequest {
+  // UUID of the order to cancel.
+  string id = 1;
+}
+
+// CancelOrderResponse is the response for CancelOrder.
+message CancelOrderResponse {
+  // The order with status CANCELLED.
+  Order order = 1;
+}
+
+// OrderService manages customer orders.
+// Communicates with user-service and product-service via Connect RPC.
+//
+// Base URL: http://localhost:8082
+service OrderService {
+  // CreateOrder places a new order.
+  // Calls user-service to verify the user and product-service to check/deduct stock.
+  // Returns NOT_FOUND if user or product does not exist.
+  // Returns FAILED_PRECONDITION if stock is insufficient.
+  rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse);
+  // GetOrder fetches a single order by ID including line items.
+  rpc GetOrder(GetOrderRequest) returns (GetOrderResponse);
+  // ListOrders returns a paginated list of orders with optional filters.
+  rpc ListOrders(ListOrdersRequest) returns (ListOrdersResponse);
+  // UpdateOrderStatus manually transitions order status.
+  rpc UpdateOrderStatus(UpdateOrderStatusRequest) returns (UpdateOrderStatusResponse);
+  // CancelOrder cancels a pending order and restores stock via product-service.
+  // Returns FAILED_PRECONDITION if the order is not in PENDING status.
+  rpc CancelOrder(CancelOrderRequest) returns (CancelOrderResponse);
+}

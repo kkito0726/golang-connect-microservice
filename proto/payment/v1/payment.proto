@@ -1,0 +1,134 @@
+syntax = "proto3";
+
+package payment.v1;
+
+option go_package = "github.com/ken/connect-microservice/gen/payment/v1;paymentv1";
+
+import "google/protobuf/timestamp.proto";
+
+// PaymentStatus represents the lifecycle of a payment.
+enum PaymentStatus {
+  PAYMENT_STATUS_UNSPECIFIED = 0;
+  // Payment initiated but not yet processed.
+  PAYMENT_STATUS_PENDING = 1;
+  // Payment successfully processed.
+  PAYMENT_STATUS_COMPLETED = 2;
+  // Payment processing failed.
+  PAYMENT_STATUS_FAILED = 3;
+  // Payment has been refunded.
+  PAYMENT_STATUS_REFUNDED = 4;
+}
+
+// PaymentMethod represents the method used for payment.
+enum PaymentMethod {
+  PAYMENT_METHOD_UNSPECIFIED = 0;
+  // Credit card payment.
+  PAYMENT_METHOD_CREDIT_CARD = 1;
+  // Bank transfer payment.
+  PAYMENT_METHOD_BANK_TRANSFER = 2;
+  // Digital wallet payment.
+  PAYMENT_METHOD_WALLET = 3;
+}
+
+// Payment represents a payment record for an order.
+message Payment {
+  // Unique identifier (UUID).
+  string id = 1;
+  // UUID of the associated order.
+  string order_id = 2;
+  // UUID of the user who made the payment.
+  string user_id = 3;
+  // Payment amount in cents.
+  int64 amount_cents = 4;
+  // Current payment status.
+  PaymentStatus status = 5;
+  // Payment method used.
+  PaymentMethod method = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+}
+
+// CreatePaymentRequest initiates a payment for an order.
+// The payment-service will:
+//   1. Fetch order details (via order-service) to get the amount
+//   2. Verify the order belongs to the user
+//   3. Process payment (simulated - always succeeds)
+//   4. Update order status to CONFIRMED (via order-service)
+message CreatePaymentRequest {
+  // UUID of the order to pay for.
+  string order_id = 1;
+  // UUID of the user making the payment.
+  string user_id = 2;
+  // Payment method to use.
+  PaymentMethod method = 3;
+}
+
+// CreatePaymentResponse is the response for CreatePayment.
+message CreatePaymentResponse {
+  // The completed payment record.
+  Payment payment = 1;
+}
+
+// GetPaymentRequest fetches a single payment by ID.
+message GetPaymentRequest {
+  string id = 1;
+}
+
+// GetPaymentResponse is the response for GetPayment.
+message GetPaymentResponse {
+  Payment payment = 1;
+}
+
+// ListPaymentsRequest lists payments with optional filters and pagination.
+message ListPaymentsRequest {
+  // Optional: filter by order ID.
+  string order_id = 1;
+  // Optional: filter by user ID.
+  string user_id = 2;
+  // Maximum number of payments to return (default: 20).
+  int32 page_size = 3;
+  // Page number (1-based, default: 1).
+  int32 page = 4;
+}
+
+// ListPaymentsResponse is the response for ListPayments.
+message ListPaymentsResponse {
+  repeated Payment payments = 1;
+  int32 total_count = 2;
+}
+
+// RefundPaymentRequest initiates a full refund.
+// The payment-service will:
+//   1. Verify the payment is in COMPLETED status
+//   2. Update payment status to REFUNDED
+//   3. Cancel the order (via order-service), which restores stock
+message RefundPaymentRequest {
+  // UUID of the payment to refund.
+  string id = 1;
+}
+
+// RefundPaymentResponse is the response for RefundPayment.
+message RefundPaymentResponse {
+  // The payment with status REFUNDED.
+  Payment payment = 1;
+}
+
+// PaymentService processes payments and refunds.
+// Communicates with order-service via Connect RPC.
+// Payment processing is simulated (always succeeds) for learning purposes.
+//
+// Base URL: http://localhost:8083
+service PaymentService {
+  // CreatePayment processes a payment for an order.
+  // Fetches order amount from order-service and updates order status to CONFIRMED.
+  // Returns NOT_FOUND if the order does not exist.
+  // Returns PERMISSION_DENIED if the order does not belong to the user.
+  rpc CreatePayment(CreatePaymentRequest) returns (CreatePaymentResponse);
+  // GetPayment fetches a single payment by ID.
+  rpc GetPayment(GetPaymentRequest) returns (GetPaymentResponse);
+  // ListPayments returns payments filtered by order or user.
+  rpc ListPayments(ListPaymentsRequest) returns (ListPaymentsResponse);
+  // RefundPayment issues a full refund and cancels the associated order.
+  // Returns FAILED_PRECONDITION if the payment is not in COMPLETED status.
+  rpc RefundPayment(RefundPaymentRequest) returns (RefundPaymentResponse);
+}

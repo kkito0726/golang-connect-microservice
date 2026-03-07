@@ -1,0 +1,2763 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <title>Protocol Documentation</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Ubuntu:400,700,400italic"/>
+    <style>
+      body {
+        width: 60em;
+        margin: 1em auto;
+        color: #222;
+        font-family: "Ubuntu", sans-serif;
+        padding-bottom: 4em;
+      }
+
+      h1 {
+        font-weight: normal;
+        border-bottom: 1px solid #aaa;
+        padding-bottom: 0.5ex;
+      }
+
+      h2 {
+        border-bottom: 1px solid #aaa;
+        padding-bottom: 0.5ex;
+        margin: 1.5em 0;
+      }
+
+      h3 {
+        font-weight: normal;
+        border-bottom: 1px solid #aaa;
+        padding-bottom: 0.5ex;
+      }
+
+      a {
+        text-decoration: none;
+        color: #567e25;
+      }
+
+      table {
+        width: 100%;
+        font-size: 80%;
+        border-collapse: collapse;
+      }
+
+      thead {
+        font-weight: 700;
+        background-color: #dcdcdc;
+      }
+
+      tbody tr:nth-child(even) {
+        background-color: #fbfbfb;
+      }
+
+      td {
+        border: 1px solid #ccc;
+        padding: 0.5ex 2ex;
+      }
+
+      td p {
+        text-indent: 1em;
+        margin: 0;
+      }
+
+      td p:nth-child(1) {
+        text-indent: 0;  
+      }
+
+       
+      .field-table td:nth-child(1) {  
+        width: 10em;
+      }
+      .field-table td:nth-child(2) {  
+        width: 10em;
+      }
+      .field-table td:nth-child(3) {  
+        width: 6em;
+      }
+      .field-table td:nth-child(4) {  
+        width: auto;
+      }
+
+       
+      .extension-table td:nth-child(1) {  
+        width: 10em;
+      }
+      .extension-table td:nth-child(2) {  
+        width: 10em;
+      }
+      .extension-table td:nth-child(3) {  
+        width: 10em;
+      }
+      .extension-table td:nth-child(4) {  
+        width: 5em;
+      }
+      .extension-table td:nth-child(5) {  
+        width: auto;
+      }
+
+       
+      .enum-table td:nth-child(1) {  
+        width: 10em;
+      }
+      .enum-table td:nth-child(2) {  
+        width: 10em;
+      }
+      .enum-table td:nth-child(3) {  
+        width: auto;
+      }
+
+       
+      .scalar-value-types-table tr {
+        height: 3em;
+      }
+
+       
+      #toc-container ul {
+        list-style-type: none;
+        padding-left: 1em;
+        line-height: 180%;
+        margin: 0;
+      }
+      #toc > li > a {
+        font-weight: bold;
+      }
+
+       
+      .file-heading {
+        width: 100%;
+        display: table;
+        border-bottom: 1px solid #aaa;
+        margin: 4em 0 1.5em 0;
+      }
+      .file-heading h2 {
+        border: none;
+        display: table-cell;
+      }
+      .file-heading a {
+        text-align: right;
+        display: table-cell;
+      }
+
+       
+      .badge {
+        width: 1.6em;
+        height: 1.6em;
+        display: inline-block;
+
+        line-height: 1.6em;
+        text-align: center;
+        font-weight: bold;
+        font-size: 60%;
+
+        color: #89ba48;
+        background-color: #dff0c8;
+
+        margin: 0.5ex 1em 0.5ex -1em;
+        border: 1px solid #fbfbfb;
+        border-radius: 1ex;
+      }
+    </style>
+
+    
+    <link rel="stylesheet" type="text/css" href="stylesheet.css"/>
+  </head>
+
+  <body>
+
+    <h1 id="title">Protocol Documentation</h1>
+
+    <h2>Table of Contents</h2>
+
+    <div id="toc-container">
+      <ul id="toc">
+        
+          
+          <li>
+            <a href="#user%2fv1%2fuser.proto">user/v1/user.proto</a>
+            <ul>
+              
+                <li>
+                  <a href="#user.v1.CreateUserRequest"><span class="badge">M</span>CreateUserRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#user.v1.CreateUserResponse"><span class="badge">M</span>CreateUserResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#user.v1.DeleteUserRequest"><span class="badge">M</span>DeleteUserRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#user.v1.DeleteUserResponse"><span class="badge">M</span>DeleteUserResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#user.v1.GetUserRequest"><span class="badge">M</span>GetUserRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#user.v1.GetUserResponse"><span class="badge">M</span>GetUserResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#user.v1.ListUsersRequest"><span class="badge">M</span>ListUsersRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#user.v1.ListUsersResponse"><span class="badge">M</span>ListUsersResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#user.v1.UpdateUserRequest"><span class="badge">M</span>UpdateUserRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#user.v1.UpdateUserResponse"><span class="badge">M</span>UpdateUserResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#user.v1.User"><span class="badge">M</span>User</a>
+                </li>
+              
+              
+                <li>
+                  <a href="#user.v1.Role"><span class="badge">E</span>Role</a>
+                </li>
+              
+              
+              
+                <li>
+                  <a href="#user.v1.UserService"><span class="badge">S</span>UserService</a>
+                </li>
+              
+            </ul>
+          </li>
+        
+          
+          <li>
+            <a href="#product%2fv1%2fproduct.proto">product/v1/product.proto</a>
+            <ul>
+              
+                <li>
+                  <a href="#product.v1.CreateProductRequest"><span class="badge">M</span>CreateProductRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#product.v1.CreateProductResponse"><span class="badge">M</span>CreateProductResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#product.v1.DeleteProductRequest"><span class="badge">M</span>DeleteProductRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#product.v1.DeleteProductResponse"><span class="badge">M</span>DeleteProductResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#product.v1.GetProductRequest"><span class="badge">M</span>GetProductRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#product.v1.GetProductResponse"><span class="badge">M</span>GetProductResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#product.v1.GetStockLevelRequest"><span class="badge">M</span>GetStockLevelRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#product.v1.GetStockLevelResponse"><span class="badge">M</span>GetStockLevelResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#product.v1.ListProductsRequest"><span class="badge">M</span>ListProductsRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#product.v1.ListProductsResponse"><span class="badge">M</span>ListProductsResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#product.v1.Product"><span class="badge">M</span>Product</a>
+                </li>
+              
+                <li>
+                  <a href="#product.v1.StockMovement"><span class="badge">M</span>StockMovement</a>
+                </li>
+              
+                <li>
+                  <a href="#product.v1.UpdateProductRequest"><span class="badge">M</span>UpdateProductRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#product.v1.UpdateProductResponse"><span class="badge">M</span>UpdateProductResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#product.v1.UpdateStockRequest"><span class="badge">M</span>UpdateStockRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#product.v1.UpdateStockResponse"><span class="badge">M</span>UpdateStockResponse</a>
+                </li>
+              
+              
+                <li>
+                  <a href="#product.v1.StockChangeReason"><span class="badge">E</span>StockChangeReason</a>
+                </li>
+              
+              
+              
+                <li>
+                  <a href="#product.v1.ProductService"><span class="badge">S</span>ProductService</a>
+                </li>
+              
+            </ul>
+          </li>
+        
+          
+          <li>
+            <a href="#order%2fv1%2forder.proto">order/v1/order.proto</a>
+            <ul>
+              
+                <li>
+                  <a href="#order.v1.CancelOrderRequest"><span class="badge">M</span>CancelOrderRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#order.v1.CancelOrderResponse"><span class="badge">M</span>CancelOrderResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#order.v1.CreateOrderItem"><span class="badge">M</span>CreateOrderItem</a>
+                </li>
+              
+                <li>
+                  <a href="#order.v1.CreateOrderRequest"><span class="badge">M</span>CreateOrderRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#order.v1.CreateOrderResponse"><span class="badge">M</span>CreateOrderResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#order.v1.GetOrderRequest"><span class="badge">M</span>GetOrderRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#order.v1.GetOrderResponse"><span class="badge">M</span>GetOrderResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#order.v1.ListOrdersRequest"><span class="badge">M</span>ListOrdersRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#order.v1.ListOrdersResponse"><span class="badge">M</span>ListOrdersResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#order.v1.Order"><span class="badge">M</span>Order</a>
+                </li>
+              
+                <li>
+                  <a href="#order.v1.OrderItem"><span class="badge">M</span>OrderItem</a>
+                </li>
+              
+                <li>
+                  <a href="#order.v1.UpdateOrderStatusRequest"><span class="badge">M</span>UpdateOrderStatusRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#order.v1.UpdateOrderStatusResponse"><span class="badge">M</span>UpdateOrderStatusResponse</a>
+                </li>
+              
+              
+                <li>
+                  <a href="#order.v1.OrderStatus"><span class="badge">E</span>OrderStatus</a>
+                </li>
+              
+              
+              
+                <li>
+                  <a href="#order.v1.OrderService"><span class="badge">S</span>OrderService</a>
+                </li>
+              
+            </ul>
+          </li>
+        
+          
+          <li>
+            <a href="#payment%2fv1%2fpayment.proto">payment/v1/payment.proto</a>
+            <ul>
+              
+                <li>
+                  <a href="#payment.v1.CreatePaymentRequest"><span class="badge">M</span>CreatePaymentRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#payment.v1.CreatePaymentResponse"><span class="badge">M</span>CreatePaymentResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#payment.v1.GetPaymentRequest"><span class="badge">M</span>GetPaymentRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#payment.v1.GetPaymentResponse"><span class="badge">M</span>GetPaymentResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#payment.v1.ListPaymentsRequest"><span class="badge">M</span>ListPaymentsRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#payment.v1.ListPaymentsResponse"><span class="badge">M</span>ListPaymentsResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#payment.v1.Payment"><span class="badge">M</span>Payment</a>
+                </li>
+              
+                <li>
+                  <a href="#payment.v1.RefundPaymentRequest"><span class="badge">M</span>RefundPaymentRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#payment.v1.RefundPaymentResponse"><span class="badge">M</span>RefundPaymentResponse</a>
+                </li>
+              
+              
+                <li>
+                  <a href="#payment.v1.PaymentMethod"><span class="badge">E</span>PaymentMethod</a>
+                </li>
+              
+                <li>
+                  <a href="#payment.v1.PaymentStatus"><span class="badge">E</span>PaymentStatus</a>
+                </li>
+              
+              
+              
+                <li>
+                  <a href="#payment.v1.PaymentService"><span class="badge">S</span>PaymentService</a>
+                </li>
+              
+            </ul>
+          </li>
+        
+        <li><a href="#scalar-value-types">Scalar Value Types</a></li>
+      </ul>
+    </div>
+
+    
+      
+      <div class="file-heading">
+        <h2 id="user/v1/user.proto">user/v1/user.proto</h2><a href="#title">Top</a>
+      </div>
+      <p></p>
+
+      
+        <h3 id="user.v1.CreateUserRequest">CreateUserRequest</h3>
+        <p>CreateUserRequest is the request message for creating a new user.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>email</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Email address (must be unique). </p></td>
+                </tr>
+              
+                <tr>
+                  <td>name</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Display name. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>password</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Plain-text password (hashed server-side with bcrypt). </p></td>
+                </tr>
+              
+                <tr>
+                  <td>role</td>
+                  <td><a href="#user.v1.Role">Role</a></td>
+                  <td></td>
+                  <td><p>Role to assign. Defaults to ROLE_CUSTOMER if unspecified. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="user.v1.CreateUserResponse">CreateUserResponse</h3>
+        <p>CreateUserResponse is the response message for CreateUser.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>user</td>
+                  <td><a href="#user.v1.User">User</a></td>
+                  <td></td>
+                  <td><p>The newly created user. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="user.v1.DeleteUserRequest">DeleteUserRequest</h3>
+        <p>DeleteUserRequest is the request message for soft-deleting a user.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>UUID of the user to delete. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="user.v1.DeleteUserResponse">DeleteUserResponse</h3>
+        <p>DeleteUserResponse is the response message for DeleteUser (empty on success).</p>
+
+        
+
+        
+      
+        <h3 id="user.v1.GetUserRequest">GetUserRequest</h3>
+        <p>GetUserRequest is the request message for fetching a single user.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>UUID of the user to fetch. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="user.v1.GetUserResponse">GetUserResponse</h3>
+        <p>GetUserResponse is the response message for GetUser.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>user</td>
+                  <td><a href="#user.v1.User">User</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="user.v1.ListUsersRequest">ListUsersRequest</h3>
+        <p>ListUsersRequest is the request message for listing users with pagination.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>page_size</td>
+                  <td><a href="#int32">int32</a></td>
+                  <td></td>
+                  <td><p>Maximum number of users to return (default: 20). </p></td>
+                </tr>
+              
+                <tr>
+                  <td>page</td>
+                  <td><a href="#int32">int32</a></td>
+                  <td></td>
+                  <td><p>Page number (1-based, default: 1). </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="user.v1.ListUsersResponse">ListUsersResponse</h3>
+        <p>ListUsersResponse is the response message for ListUsers.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>users</td>
+                  <td><a href="#user.v1.User">User</a></td>
+                  <td>repeated</td>
+                  <td><p>List of users for the current page. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>total_count</td>
+                  <td><a href="#int32">int32</a></td>
+                  <td></td>
+                  <td><p>Total number of active users. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="user.v1.UpdateUserRequest">UpdateUserRequest</h3>
+        <p>UpdateUserRequest is the request message for updating user profile.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>UUID of the user to update. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>name</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>New display name. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>email</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>New email address. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="user.v1.UpdateUserResponse">UpdateUserResponse</h3>
+        <p>UpdateUserResponse is the response message for UpdateUser.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>user</td>
+                  <td><a href="#user.v1.User">User</a></td>
+                  <td></td>
+                  <td><p>The updated user. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="user.v1.User">User</h3>
+        <p>User represents a registered user in the inventory management system.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Unique identifier (UUID). </p></td>
+                </tr>
+              
+                <tr>
+                  <td>email</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Email address (unique per active user). </p></td>
+                </tr>
+              
+                <tr>
+                  <td>name</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Display name. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>role</td>
+                  <td><a href="#user.v1.Role">Role</a></td>
+                  <td></td>
+                  <td><p>User role. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>created_at</td>
+                  <td><a href="#google.protobuf.Timestamp">google.protobuf.Timestamp</a></td>
+                  <td></td>
+                  <td><p>Timestamp when the user was created. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>updated_at</td>
+                  <td><a href="#google.protobuf.Timestamp">google.protobuf.Timestamp</a></td>
+                  <td></td>
+                  <td><p>Timestamp when the user was last updated. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+
+      
+        <h3 id="user.v1.Role">Role</h3>
+        <p>Role represents the user's role in the system.</p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td>ROLE_UNSPECIFIED</td>
+                <td>0</td>
+                <td><p>Default unspecified value.</p></td>
+              </tr>
+            
+              <tr>
+                <td>ROLE_CUSTOMER</td>
+                <td>1</td>
+                <td><p>A regular customer who can place orders.</p></td>
+              </tr>
+            
+              <tr>
+                <td>ROLE_ADMIN</td>
+                <td>2</td>
+                <td><p>An administrator with full access.</p></td>
+              </tr>
+            
+          </tbody>
+        </table>
+      
+
+      
+
+      
+        <h3 id="user.v1.UserService">UserService</h3>
+        <p>UserService manages user registration and profiles.</p><p>Base URL: http://localhost:8080</p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Method Name</td><td>Request Type</td><td>Response Type</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td>CreateUser</td>
+                <td><a href="#user.v1.CreateUserRequest">CreateUserRequest</a></td>
+                <td><a href="#user.v1.CreateUserResponse">CreateUserResponse</a></td>
+                <td><p>CreateUser registers a new user.
+Returns ALREADY_EXISTS if the email is taken.</p></td>
+              </tr>
+            
+              <tr>
+                <td>GetUser</td>
+                <td><a href="#user.v1.GetUserRequest">GetUserRequest</a></td>
+                <td><a href="#user.v1.GetUserResponse">GetUserResponse</a></td>
+                <td><p>GetUser fetches a user by ID.
+Returns NOT_FOUND if the user does not exist or is deleted.</p></td>
+              </tr>
+            
+              <tr>
+                <td>ListUsers</td>
+                <td><a href="#user.v1.ListUsersRequest">ListUsersRequest</a></td>
+                <td><a href="#user.v1.ListUsersResponse">ListUsersResponse</a></td>
+                <td><p>ListUsers returns a paginated list of active users.</p></td>
+              </tr>
+            
+              <tr>
+                <td>UpdateUser</td>
+                <td><a href="#user.v1.UpdateUserRequest">UpdateUserRequest</a></td>
+                <td><a href="#user.v1.UpdateUserResponse">UpdateUserResponse</a></td>
+                <td><p>UpdateUser updates the user&#39;s name and email.
+Returns NOT_FOUND if the user does not exist.</p></td>
+              </tr>
+            
+              <tr>
+                <td>DeleteUser</td>
+                <td><a href="#user.v1.DeleteUserRequest">DeleteUserRequest</a></td>
+                <td><a href="#user.v1.DeleteUserResponse">DeleteUserResponse</a></td>
+                <td><p>DeleteUser performs a soft delete on the user.
+Returns NOT_FOUND if the user does not exist.</p></td>
+              </tr>
+            
+          </tbody>
+        </table>
+
+        
+    
+      
+      <div class="file-heading">
+        <h2 id="product/v1/product.proto">product/v1/product.proto</h2><a href="#title">Top</a>
+      </div>
+      <p></p>
+
+      
+        <h3 id="product.v1.CreateProductRequest">CreateProductRequest</h3>
+        <p>CreateProductRequest is the request message for registering a new product.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>sku</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>SKU code (must be unique). </p></td>
+                </tr>
+              
+                <tr>
+                  <td>name</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Product name. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>description</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Optional description. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>price_cents</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>Price in cents. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>stock_quantity</td>
+                  <td><a href="#int32">int32</a></td>
+                  <td></td>
+                  <td><p>Initial stock quantity. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>category</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Optional category. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="product.v1.CreateProductResponse">CreateProductResponse</h3>
+        <p>CreateProductResponse is the response for CreateProduct.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>product</td>
+                  <td><a href="#product.v1.Product">Product</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="product.v1.DeleteProductRequest">DeleteProductRequest</h3>
+        <p>DeleteProductRequest is the request for soft-deleting a product.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="product.v1.DeleteProductResponse">DeleteProductResponse</h3>
+        <p>DeleteProductResponse is the response for DeleteProduct (empty on success).</p>
+
+        
+
+        
+      
+        <h3 id="product.v1.GetProductRequest">GetProductRequest</h3>
+        <p>GetProductRequest is the request for fetching a product by ID.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>UUID of the product. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="product.v1.GetProductResponse">GetProductResponse</h3>
+        <p>GetProductResponse is the response for GetProduct.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>product</td>
+                  <td><a href="#product.v1.Product">Product</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="product.v1.GetStockLevelRequest">GetStockLevelRequest</h3>
+        <p>GetStockLevelRequest retrieves the current stock and recent movements.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>product_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="product.v1.GetStockLevelResponse">GetStockLevelResponse</h3>
+        <p>GetStockLevelResponse contains the current stock level and recent audit trail.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>product_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>stock_quantity</td>
+                  <td><a href="#int32">int32</a></td>
+                  <td></td>
+                  <td><p>Current stock quantity. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>recent_movements</td>
+                  <td><a href="#product.v1.StockMovement">StockMovement</a></td>
+                  <td>repeated</td>
+                  <td><p>Up to 10 most recent stock movements. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="product.v1.ListProductsRequest">ListProductsRequest</h3>
+        <p>ListProductsRequest is the request for listing products with optional filtering.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>page_size</td>
+                  <td><a href="#int32">int32</a></td>
+                  <td></td>
+                  <td><p>Maximum number of products to return (default: 20). </p></td>
+                </tr>
+              
+                <tr>
+                  <td>page</td>
+                  <td><a href="#int32">int32</a></td>
+                  <td></td>
+                  <td><p>Page number (1-based, default: 1). </p></td>
+                </tr>
+              
+                <tr>
+                  <td>category</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Optional category filter. Empty string means no filter. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="product.v1.ListProductsResponse">ListProductsResponse</h3>
+        <p>ListProductsResponse is the response for ListProducts.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>products</td>
+                  <td><a href="#product.v1.Product">Product</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>total_count</td>
+                  <td><a href="#int32">int32</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="product.v1.Product">Product</h3>
+        <p>Product represents an item in the inventory catalog.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Unique identifier (UUID). </p></td>
+                </tr>
+              
+                <tr>
+                  <td>sku</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Stock Keeping Unit code (unique per active product). </p></td>
+                </tr>
+              
+                <tr>
+                  <td>name</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Product display name. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>description</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Detailed description. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>price_cents</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>Price in cents (e.g. 199900 = $1,999.00). Avoids floating-point precision issues. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>stock_quantity</td>
+                  <td><a href="#int32">int32</a></td>
+                  <td></td>
+                  <td><p>Current stock quantity. Always &gt;= 0. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>category</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Product category for filtering. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>created_at</td>
+                  <td><a href="#google.protobuf.Timestamp">google.protobuf.Timestamp</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>updated_at</td>
+                  <td><a href="#google.protobuf.Timestamp">google.protobuf.Timestamp</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="product.v1.StockMovement">StockMovement</h3>
+        <p>StockMovement is an audit log entry recording a single stock change.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Unique identifier (UUID). </p></td>
+                </tr>
+              
+                <tr>
+                  <td>product_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Product whose stock changed. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>delta</td>
+                  <td><a href="#int32">int32</a></td>
+                  <td></td>
+                  <td><p>Change amount. Positive = increase, negative = decrease. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>reason</td>
+                  <td><a href="#product.v1.StockChangeReason">StockChangeReason</a></td>
+                  <td></td>
+                  <td><p>Why the stock changed. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>reference_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Optional reference to a related entity (e.g. order ID). </p></td>
+                </tr>
+              
+                <tr>
+                  <td>created_at</td>
+                  <td><a href="#google.protobuf.Timestamp">google.protobuf.Timestamp</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="product.v1.UpdateProductRequest">UpdateProductRequest</h3>
+        <p>UpdateProductRequest is the request for updating product metadata (not stock).</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>UUID of the product to update. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>name</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>description</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>price_cents</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>New price in cents. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>category</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="product.v1.UpdateProductResponse">UpdateProductResponse</h3>
+        <p>UpdateProductResponse is the response for UpdateProduct.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>product</td>
+                  <td><a href="#product.v1.Product">Product</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="product.v1.UpdateStockRequest">UpdateStockRequest</h3>
+        <p>UpdateStockRequest adjusts the stock level atomically using SELECT ... FOR UPDATE.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>product_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>UUID of the product. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>delta</td>
+                  <td><a href="#int32">int32</a></td>
+                  <td></td>
+                  <td><p>Amount to change. Positive adds stock, negative removes stock. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>reason</td>
+                  <td><a href="#product.v1.StockChangeReason">StockChangeReason</a></td>
+                  <td></td>
+                  <td><p>Reason for the change. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>reference_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Optional reference ID (e.g. order ID that caused this change). </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="product.v1.UpdateStockResponse">UpdateStockResponse</h3>
+        <p>UpdateStockResponse contains the updated product and the new movement record.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>product</td>
+                  <td><a href="#product.v1.Product">Product</a></td>
+                  <td></td>
+                  <td><p>Product with updated stock_quantity. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>movement</td>
+                  <td><a href="#product.v1.StockMovement">StockMovement</a></td>
+                  <td></td>
+                  <td><p>The stock movement audit record that was created. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+
+      
+        <h3 id="product.v1.StockChangeReason">StockChangeReason</h3>
+        <p>StockChangeReason describes why a stock level changed.</p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td>STOCK_CHANGE_REASON_UNSPECIFIED</td>
+                <td>0</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>STOCK_CHANGE_REASON_RESTOCK</td>
+                <td>1</td>
+                <td><p>New inventory received from supplier.</p></td>
+              </tr>
+            
+              <tr>
+                <td>STOCK_CHANGE_REASON_SALE</td>
+                <td>2</td>
+                <td><p>Stock deducted due to a sale/order.</p></td>
+              </tr>
+            
+              <tr>
+                <td>STOCK_CHANGE_REASON_ADJUSTMENT</td>
+                <td>3</td>
+                <td><p>Manual adjustment by an administrator.</p></td>
+              </tr>
+            
+              <tr>
+                <td>STOCK_CHANGE_REASON_RETURN</td>
+                <td>4</td>
+                <td><p>Stock restored due to an order cancellation or return.</p></td>
+              </tr>
+            
+          </tbody>
+        </table>
+      
+
+      
+
+      
+        <h3 id="product.v1.ProductService">ProductService</h3>
+        <p>ProductService manages the product catalog and inventory.</p><p>Base URL: http://localhost:8081</p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Method Name</td><td>Request Type</td><td>Response Type</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td>CreateProduct</td>
+                <td><a href="#product.v1.CreateProductRequest">CreateProductRequest</a></td>
+                <td><a href="#product.v1.CreateProductResponse">CreateProductResponse</a></td>
+                <td><p>CreateProduct registers a new product in the catalog.
+Returns ALREADY_EXISTS if the SKU is taken.</p></td>
+              </tr>
+            
+              <tr>
+                <td>GetProduct</td>
+                <td><a href="#product.v1.GetProductRequest">GetProductRequest</a></td>
+                <td><a href="#product.v1.GetProductResponse">GetProductResponse</a></td>
+                <td><p>GetProduct fetches a product by ID.
+Returns NOT_FOUND if the product does not exist or is deleted.</p></td>
+              </tr>
+            
+              <tr>
+                <td>ListProducts</td>
+                <td><a href="#product.v1.ListProductsRequest">ListProductsRequest</a></td>
+                <td><a href="#product.v1.ListProductsResponse">ListProductsResponse</a></td>
+                <td><p>ListProducts returns a paginated, optionally filtered list of products.</p></td>
+              </tr>
+            
+              <tr>
+                <td>UpdateProduct</td>
+                <td><a href="#product.v1.UpdateProductRequest">UpdateProductRequest</a></td>
+                <td><a href="#product.v1.UpdateProductResponse">UpdateProductResponse</a></td>
+                <td><p>UpdateProduct updates product metadata (name, description, price, category).
+Does NOT change stock. Use UpdateStock for inventory changes.</p></td>
+              </tr>
+            
+              <tr>
+                <td>DeleteProduct</td>
+                <td><a href="#product.v1.DeleteProductRequest">DeleteProductRequest</a></td>
+                <td><a href="#product.v1.DeleteProductResponse">DeleteProductResponse</a></td>
+                <td><p>DeleteProduct performs a soft delete.</p></td>
+              </tr>
+            
+              <tr>
+                <td>UpdateStock</td>
+                <td><a href="#product.v1.UpdateStockRequest">UpdateStockRequest</a></td>
+                <td><a href="#product.v1.UpdateStockResponse">UpdateStockResponse</a></td>
+                <td><p>UpdateStock atomically adjusts a product&#39;s stock level.
+Uses SELECT ... FOR UPDATE to prevent race conditions.
+Returns FAILED_PRECONDITION if stock would go negative.</p></td>
+              </tr>
+            
+              <tr>
+                <td>GetStockLevel</td>
+                <td><a href="#product.v1.GetStockLevelRequest">GetStockLevelRequest</a></td>
+                <td><a href="#product.v1.GetStockLevelResponse">GetStockLevelResponse</a></td>
+                <td><p>GetStockLevel returns the current stock and recent movement history.</p></td>
+              </tr>
+            
+          </tbody>
+        </table>
+
+        
+    
+      
+      <div class="file-heading">
+        <h2 id="order/v1/order.proto">order/v1/order.proto</h2><a href="#title">Top</a>
+      </div>
+      <p></p>
+
+      
+        <h3 id="order.v1.CancelOrderRequest">CancelOrderRequest</h3>
+        <p>CancelOrderRequest cancels a pending order and restores stock.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>UUID of the order to cancel. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="order.v1.CancelOrderResponse">CancelOrderResponse</h3>
+        <p>CancelOrderResponse is the response for CancelOrder.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>order</td>
+                  <td><a href="#order.v1.Order">Order</a></td>
+                  <td></td>
+                  <td><p>The order with status CANCELLED. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="order.v1.CreateOrderItem">CreateOrderItem</h3>
+        <p>CreateOrderItem specifies a product and quantity for a new order.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>product_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>UUID of the product to order. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>quantity</td>
+                  <td><a href="#int32">int32</a></td>
+                  <td></td>
+                  <td><p>Number of units to order. Must be &gt; 0. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="order.v1.CreateOrderRequest">CreateOrderRequest</h3>
+        <p>CreateOrderRequest places a new order.</p><p>The order-service will:</p><p>1. Verify the user exists (via user-service)</p><p>2. Fetch product details and verify stock (via product-service)</p><p>3. Deduct stock for each item (via product-service UpdateStock)</p><p>4. Create the order record with status PENDING</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>user_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>UUID of the user placing the order. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>items</td>
+                  <td><a href="#order.v1.CreateOrderItem">CreateOrderItem</a></td>
+                  <td>repeated</td>
+                  <td><p>Items to order. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="order.v1.CreateOrderResponse">CreateOrderResponse</h3>
+        <p>CreateOrderResponse is the response for CreateOrder.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>order</td>
+                  <td><a href="#order.v1.Order">Order</a></td>
+                  <td></td>
+                  <td><p>The newly created order with status PENDING. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="order.v1.GetOrderRequest">GetOrderRequest</h3>
+        <p>GetOrderRequest fetches a single order by ID.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="order.v1.GetOrderResponse">GetOrderResponse</h3>
+        <p>GetOrderResponse is the response for GetOrder.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>order</td>
+                  <td><a href="#order.v1.Order">Order</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="order.v1.ListOrdersRequest">ListOrdersRequest</h3>
+        <p>ListOrdersRequest lists orders with optional filters and pagination.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>user_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Optional: filter by user ID. Empty means all users. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>status</td>
+                  <td><a href="#order.v1.OrderStatus">OrderStatus</a></td>
+                  <td></td>
+                  <td><p>Optional: filter by status. UNSPECIFIED means all statuses. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>page_size</td>
+                  <td><a href="#int32">int32</a></td>
+                  <td></td>
+                  <td><p>Maximum number of orders to return (default: 20). </p></td>
+                </tr>
+              
+                <tr>
+                  <td>page</td>
+                  <td><a href="#int32">int32</a></td>
+                  <td></td>
+                  <td><p>Page number (1-based, default: 1). </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="order.v1.ListOrdersResponse">ListOrdersResponse</h3>
+        <p>ListOrdersResponse is the response for ListOrders.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>orders</td>
+                  <td><a href="#order.v1.Order">Order</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>total_count</td>
+                  <td><a href="#int32">int32</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="order.v1.Order">Order</h3>
+        <p>Order represents a customer order with line items.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Unique identifier (UUID). </p></td>
+                </tr>
+              
+                <tr>
+                  <td>user_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>UUID of the user who placed the order. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>status</td>
+                  <td><a href="#order.v1.OrderStatus">OrderStatus</a></td>
+                  <td></td>
+                  <td><p>Current order status. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>items</td>
+                  <td><a href="#order.v1.OrderItem">OrderItem</a></td>
+                  <td>repeated</td>
+                  <td><p>Line items in this order. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>total_cents</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>Total order amount in cents (sum of quantity * unit_price_cents). </p></td>
+                </tr>
+              
+                <tr>
+                  <td>created_at</td>
+                  <td><a href="#google.protobuf.Timestamp">google.protobuf.Timestamp</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>updated_at</td>
+                  <td><a href="#google.protobuf.Timestamp">google.protobuf.Timestamp</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="order.v1.OrderItem">OrderItem</h3>
+        <p>OrderItem represents a single line item in an order.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Unique identifier (UUID). </p></td>
+                </tr>
+              
+                <tr>
+                  <td>product_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>UUID of the product. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>product_name</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Product name at time of order (denormalized for history). </p></td>
+                </tr>
+              
+                <tr>
+                  <td>quantity</td>
+                  <td><a href="#int32">int32</a></td>
+                  <td></td>
+                  <td><p>Number of units ordered. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>unit_price_cents</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>Price per unit in cents at time of order. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="order.v1.UpdateOrderStatusRequest">UpdateOrderStatusRequest</h3>
+        <p>UpdateOrderStatusRequest manually transitions an order's status.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>UUID of the order. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>status</td>
+                  <td><a href="#order.v1.OrderStatus">OrderStatus</a></td>
+                  <td></td>
+                  <td><p>New status to set. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="order.v1.UpdateOrderStatusResponse">UpdateOrderStatusResponse</h3>
+        <p>UpdateOrderStatusResponse is the response for UpdateOrderStatus.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>order</td>
+                  <td><a href="#order.v1.Order">Order</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+
+      
+        <h3 id="order.v1.OrderStatus">OrderStatus</h3>
+        <p>OrderStatus represents the lifecycle of an order.</p><p>State transitions:</p><p>PENDING -> CONFIRMED (after payment)</p><p>CONFIRMED -> SHIPPED -> DELIVERED</p><p>PENDING -> CANCELLED (by user or refund)</p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td>ORDER_STATUS_UNSPECIFIED</td>
+                <td>0</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>ORDER_STATUS_PENDING</td>
+                <td>1</td>
+                <td><p>Order created, awaiting payment.</p></td>
+              </tr>
+            
+              <tr>
+                <td>ORDER_STATUS_CONFIRMED</td>
+                <td>2</td>
+                <td><p>Payment received, order confirmed.</p></td>
+              </tr>
+            
+              <tr>
+                <td>ORDER_STATUS_SHIPPED</td>
+                <td>3</td>
+                <td><p>Order shipped to customer.</p></td>
+              </tr>
+            
+              <tr>
+                <td>ORDER_STATUS_DELIVERED</td>
+                <td>4</td>
+                <td><p>Order delivered to customer.</p></td>
+              </tr>
+            
+              <tr>
+                <td>ORDER_STATUS_CANCELLED</td>
+                <td>5</td>
+                <td><p>Order cancelled. Stock has been restored.</p></td>
+              </tr>
+            
+          </tbody>
+        </table>
+      
+
+      
+
+      
+        <h3 id="order.v1.OrderService">OrderService</h3>
+        <p>OrderService manages customer orders.</p><p>Communicates with user-service and product-service via Connect RPC.</p><p>Base URL: http://localhost:8082</p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Method Name</td><td>Request Type</td><td>Response Type</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td>CreateOrder</td>
+                <td><a href="#order.v1.CreateOrderRequest">CreateOrderRequest</a></td>
+                <td><a href="#order.v1.CreateOrderResponse">CreateOrderResponse</a></td>
+                <td><p>CreateOrder places a new order.
+Calls user-service to verify the user and product-service to check/deduct stock.
+Returns NOT_FOUND if user or product does not exist.
+Returns FAILED_PRECONDITION if stock is insufficient.</p></td>
+              </tr>
+            
+              <tr>
+                <td>GetOrder</td>
+                <td><a href="#order.v1.GetOrderRequest">GetOrderRequest</a></td>
+                <td><a href="#order.v1.GetOrderResponse">GetOrderResponse</a></td>
+                <td><p>GetOrder fetches a single order by ID including line items.</p></td>
+              </tr>
+            
+              <tr>
+                <td>ListOrders</td>
+                <td><a href="#order.v1.ListOrdersRequest">ListOrdersRequest</a></td>
+                <td><a href="#order.v1.ListOrdersResponse">ListOrdersResponse</a></td>
+                <td><p>ListOrders returns a paginated list of orders with optional filters.</p></td>
+              </tr>
+            
+              <tr>
+                <td>UpdateOrderStatus</td>
+                <td><a href="#order.v1.UpdateOrderStatusRequest">UpdateOrderStatusRequest</a></td>
+                <td><a href="#order.v1.UpdateOrderStatusResponse">UpdateOrderStatusResponse</a></td>
+                <td><p>UpdateOrderStatus manually transitions order status.</p></td>
+              </tr>
+            
+              <tr>
+                <td>CancelOrder</td>
+                <td><a href="#order.v1.CancelOrderRequest">CancelOrderRequest</a></td>
+                <td><a href="#order.v1.CancelOrderResponse">CancelOrderResponse</a></td>
+                <td><p>CancelOrder cancels a pending order and restores stock via product-service.
+Returns FAILED_PRECONDITION if the order is not in PENDING status.</p></td>
+              </tr>
+            
+          </tbody>
+        </table>
+
+        
+    
+      
+      <div class="file-heading">
+        <h2 id="payment/v1/payment.proto">payment/v1/payment.proto</h2><a href="#title">Top</a>
+      </div>
+      <p></p>
+
+      
+        <h3 id="payment.v1.CreatePaymentRequest">CreatePaymentRequest</h3>
+        <p>CreatePaymentRequest initiates a payment for an order.</p><p>The payment-service will:</p><p>1. Fetch order details (via order-service) to get the amount</p><p>2. Verify the order belongs to the user</p><p>3. Process payment (simulated - always succeeds)</p><p>4. Update order status to CONFIRMED (via order-service)</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>order_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>UUID of the order to pay for. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>user_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>UUID of the user making the payment. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>method</td>
+                  <td><a href="#payment.v1.PaymentMethod">PaymentMethod</a></td>
+                  <td></td>
+                  <td><p>Payment method to use. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="payment.v1.CreatePaymentResponse">CreatePaymentResponse</h3>
+        <p>CreatePaymentResponse is the response for CreatePayment.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>payment</td>
+                  <td><a href="#payment.v1.Payment">Payment</a></td>
+                  <td></td>
+                  <td><p>The completed payment record. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="payment.v1.GetPaymentRequest">GetPaymentRequest</h3>
+        <p>GetPaymentRequest fetches a single payment by ID.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="payment.v1.GetPaymentResponse">GetPaymentResponse</h3>
+        <p>GetPaymentResponse is the response for GetPayment.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>payment</td>
+                  <td><a href="#payment.v1.Payment">Payment</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="payment.v1.ListPaymentsRequest">ListPaymentsRequest</h3>
+        <p>ListPaymentsRequest lists payments with optional filters and pagination.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>order_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Optional: filter by order ID. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>user_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Optional: filter by user ID. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>page_size</td>
+                  <td><a href="#int32">int32</a></td>
+                  <td></td>
+                  <td><p>Maximum number of payments to return (default: 20). </p></td>
+                </tr>
+              
+                <tr>
+                  <td>page</td>
+                  <td><a href="#int32">int32</a></td>
+                  <td></td>
+                  <td><p>Page number (1-based, default: 1). </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="payment.v1.ListPaymentsResponse">ListPaymentsResponse</h3>
+        <p>ListPaymentsResponse is the response for ListPayments.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>payments</td>
+                  <td><a href="#payment.v1.Payment">Payment</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>total_count</td>
+                  <td><a href="#int32">int32</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="payment.v1.Payment">Payment</h3>
+        <p>Payment represents a payment record for an order.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Unique identifier (UUID). </p></td>
+                </tr>
+              
+                <tr>
+                  <td>order_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>UUID of the associated order. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>user_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>UUID of the user who made the payment. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>amount_cents</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>Payment amount in cents. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>status</td>
+                  <td><a href="#payment.v1.PaymentStatus">PaymentStatus</a></td>
+                  <td></td>
+                  <td><p>Current payment status. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>method</td>
+                  <td><a href="#payment.v1.PaymentMethod">PaymentMethod</a></td>
+                  <td></td>
+                  <td><p>Payment method used. </p></td>
+                </tr>
+              
+                <tr>
+                  <td>created_at</td>
+                  <td><a href="#google.protobuf.Timestamp">google.protobuf.Timestamp</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>updated_at</td>
+                  <td><a href="#google.protobuf.Timestamp">google.protobuf.Timestamp</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="payment.v1.RefundPaymentRequest">RefundPaymentRequest</h3>
+        <p>RefundPaymentRequest initiates a full refund.</p><p>The payment-service will:</p><p>1. Verify the payment is in COMPLETED status</p><p>2. Update payment status to REFUNDED</p><p>3. Cancel the order (via order-service), which restores stock</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>UUID of the payment to refund. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="payment.v1.RefundPaymentResponse">RefundPaymentResponse</h3>
+        <p>RefundPaymentResponse is the response for RefundPayment.</p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>payment</td>
+                  <td><a href="#payment.v1.Payment">Payment</a></td>
+                  <td></td>
+                  <td><p>The payment with status REFUNDED. </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+
+      
+        <h3 id="payment.v1.PaymentMethod">PaymentMethod</h3>
+        <p>PaymentMethod represents the method used for payment.</p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td>PAYMENT_METHOD_UNSPECIFIED</td>
+                <td>0</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>PAYMENT_METHOD_CREDIT_CARD</td>
+                <td>1</td>
+                <td><p>Credit card payment.</p></td>
+              </tr>
+            
+              <tr>
+                <td>PAYMENT_METHOD_BANK_TRANSFER</td>
+                <td>2</td>
+                <td><p>Bank transfer payment.</p></td>
+              </tr>
+            
+              <tr>
+                <td>PAYMENT_METHOD_WALLET</td>
+                <td>3</td>
+                <td><p>Digital wallet payment.</p></td>
+              </tr>
+            
+          </tbody>
+        </table>
+      
+        <h3 id="payment.v1.PaymentStatus">PaymentStatus</h3>
+        <p>PaymentStatus represents the lifecycle of a payment.</p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td>PAYMENT_STATUS_UNSPECIFIED</td>
+                <td>0</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>PAYMENT_STATUS_PENDING</td>
+                <td>1</td>
+                <td><p>Payment initiated but not yet processed.</p></td>
+              </tr>
+            
+              <tr>
+                <td>PAYMENT_STATUS_COMPLETED</td>
+                <td>2</td>
+                <td><p>Payment successfully processed.</p></td>
+              </tr>
+            
+              <tr>
+                <td>PAYMENT_STATUS_FAILED</td>
+                <td>3</td>
+                <td><p>Payment processing failed.</p></td>
+              </tr>
+            
+              <tr>
+                <td>PAYMENT_STATUS_REFUNDED</td>
+                <td>4</td>
+                <td><p>Payment has been refunded.</p></td>
+              </tr>
+            
+          </tbody>
+        </table>
+      
+
+      
+
+      
+        <h3 id="payment.v1.PaymentService">PaymentService</h3>
+        <p>PaymentService processes payments and refunds.</p><p>Communicates with order-service via Connect RPC.</p><p>Payment processing is simulated (always succeeds) for learning purposes.</p><p>Base URL: http://localhost:8083</p>
+        <table class="enum-table">
+          <thead>
+            <tr><td>Method Name</td><td>Request Type</td><td>Response Type</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+            
+              <tr>
+                <td>CreatePayment</td>
+                <td><a href="#payment.v1.CreatePaymentRequest">CreatePaymentRequest</a></td>
+                <td><a href="#payment.v1.CreatePaymentResponse">CreatePaymentResponse</a></td>
+                <td><p>CreatePayment processes a payment for an order.
+Fetches order amount from order-service and updates order status to CONFIRMED.
+Returns NOT_FOUND if the order does not exist.
+Returns PERMISSION_DENIED if the order does not belong to the user.</p></td>
+              </tr>
+            
+              <tr>
+                <td>GetPayment</td>
+                <td><a href="#payment.v1.GetPaymentRequest">GetPaymentRequest</a></td>
+                <td><a href="#payment.v1.GetPaymentResponse">GetPaymentResponse</a></td>
+                <td><p>GetPayment fetches a single payment by ID.</p></td>
+              </tr>
+            
+              <tr>
+                <td>ListPayments</td>
+                <td><a href="#payment.v1.ListPaymentsRequest">ListPaymentsRequest</a></td>
+                <td><a href="#payment.v1.ListPaymentsResponse">ListPaymentsResponse</a></td>
+                <td><p>ListPayments returns payments filtered by order or user.</p></td>
+              </tr>
+            
+              <tr>
+                <td>RefundPayment</td>
+                <td><a href="#payment.v1.RefundPaymentRequest">RefundPaymentRequest</a></td>
+                <td><a href="#payment.v1.RefundPaymentResponse">RefundPaymentResponse</a></td>
+                <td><p>RefundPayment issues a full refund and cancels the associated order.
+Returns FAILED_PRECONDITION if the payment is not in COMPLETED status.</p></td>
+              </tr>
+            
+          </tbody>
+        </table>
+
+        
+    
+
+    <h2 id="scalar-value-types">Scalar Value Types</h2>
+    <table class="scalar-value-types-table">
+      <thead>
+        <tr><td>.proto Type</td><td>Notes</td><td>C++</td><td>Java</td><td>Python</td><td>Go</td><td>C#</td><td>PHP</td><td>Ruby</td></tr>
+      </thead>
+      <tbody>
+        
+          <tr id="double">
+            <td>double</td>
+            <td></td>
+            <td>double</td>
+            <td>double</td>
+            <td>float</td>
+            <td>float64</td>
+            <td>double</td>
+            <td>float</td>
+            <td>Float</td>
+          </tr>
+        
+          <tr id="float">
+            <td>float</td>
+            <td></td>
+            <td>float</td>
+            <td>float</td>
+            <td>float</td>
+            <td>float32</td>
+            <td>float</td>
+            <td>float</td>
+            <td>Float</td>
+          </tr>
+        
+          <tr id="int32">
+            <td>int32</td>
+            <td>Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint32 instead.</td>
+            <td>int32</td>
+            <td>int</td>
+            <td>int</td>
+            <td>int32</td>
+            <td>int</td>
+            <td>integer</td>
+            <td>Bignum or Fixnum (as required)</td>
+          </tr>
+        
+          <tr id="int64">
+            <td>int64</td>
+            <td>Uses variable-length encoding. Inefficient for encoding negative numbers – if your field is likely to have negative values, use sint64 instead.</td>
+            <td>int64</td>
+            <td>long</td>
+            <td>int/long</td>
+            <td>int64</td>
+            <td>long</td>
+            <td>integer/string</td>
+            <td>Bignum</td>
+          </tr>
+        
+          <tr id="uint32">
+            <td>uint32</td>
+            <td>Uses variable-length encoding.</td>
+            <td>uint32</td>
+            <td>int</td>
+            <td>int/long</td>
+            <td>uint32</td>
+            <td>uint</td>
+            <td>integer</td>
+            <td>Bignum or Fixnum (as required)</td>
+          </tr>
+        
+          <tr id="uint64">
+            <td>uint64</td>
+            <td>Uses variable-length encoding.</td>
+            <td>uint64</td>
+            <td>long</td>
+            <td>int/long</td>
+            <td>uint64</td>
+            <td>ulong</td>
+            <td>integer/string</td>
+            <td>Bignum or Fixnum (as required)</td>
+          </tr>
+        
+          <tr id="sint32">
+            <td>sint32</td>
+            <td>Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int32s.</td>
+            <td>int32</td>
+            <td>int</td>
+            <td>int</td>
+            <td>int32</td>
+            <td>int</td>
+            <td>integer</td>
+            <td>Bignum or Fixnum (as required)</td>
+          </tr>
+        
+          <tr id="sint64">
+            <td>sint64</td>
+            <td>Uses variable-length encoding. Signed int value. These more efficiently encode negative numbers than regular int64s.</td>
+            <td>int64</td>
+            <td>long</td>
+            <td>int/long</td>
+            <td>int64</td>
+            <td>long</td>
+            <td>integer/string</td>
+            <td>Bignum</td>
+          </tr>
+        
+          <tr id="fixed32">
+            <td>fixed32</td>
+            <td>Always four bytes. More efficient than uint32 if values are often greater than 2^28.</td>
+            <td>uint32</td>
+            <td>int</td>
+            <td>int</td>
+            <td>uint32</td>
+            <td>uint</td>
+            <td>integer</td>
+            <td>Bignum or Fixnum (as required)</td>
+          </tr>
+        
+          <tr id="fixed64">
+            <td>fixed64</td>
+            <td>Always eight bytes. More efficient than uint64 if values are often greater than 2^56.</td>
+            <td>uint64</td>
+            <td>long</td>
+            <td>int/long</td>
+            <td>uint64</td>
+            <td>ulong</td>
+            <td>integer/string</td>
+            <td>Bignum</td>
+          </tr>
+        
+          <tr id="sfixed32">
+            <td>sfixed32</td>
+            <td>Always four bytes.</td>
+            <td>int32</td>
+            <td>int</td>
+            <td>int</td>
+            <td>int32</td>
+            <td>int</td>
+            <td>integer</td>
+            <td>Bignum or Fixnum (as required)</td>
+          </tr>
+        
+          <tr id="sfixed64">
+            <td>sfixed64</td>
+            <td>Always eight bytes.</td>
+            <td>int64</td>
+            <td>long</td>
+            <td>int/long</td>
+            <td>int64</td>
+            <td>long</td>
+            <td>integer/string</td>
+            <td>Bignum</td>
+          </tr>
+        
+          <tr id="bool">
+            <td>bool</td>
+            <td></td>
+            <td>bool</td>
+            <td>boolean</td>
+            <td>boolean</td>
+            <td>bool</td>
+            <td>bool</td>
+            <td>boolean</td>
+            <td>TrueClass/FalseClass</td>
+          </tr>
+        
+          <tr id="string">
+            <td>string</td>
+            <td>A string must always contain UTF-8 encoded or 7-bit ASCII text.</td>
+            <td>string</td>
+            <td>String</td>
+            <td>str/unicode</td>
+            <td>string</td>
+            <td>string</td>
+            <td>string</td>
+            <td>String (UTF-8)</td>
+          </tr>
+        
+          <tr id="bytes">
+            <td>bytes</td>
+            <td>May contain any arbitrary sequence of bytes.</td>
+            <td>string</td>
+            <td>ByteString</td>
+            <td>str</td>
+            <td>[]byte</td>
+            <td>ByteString</td>
+            <td>string</td>
+            <td>String (ASCII-8BIT)</td>
+          </tr>
+        
+      </tbody>
+    </table>
+  </body>
+</html>
+
