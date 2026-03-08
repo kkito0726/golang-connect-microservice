@@ -6,37 +6,47 @@ Go + [Connect RPC](https://connectrpc.com/) で構築した在庫管理マイク
 ## Architecture
 
 ```
-                          +-----------------+
-                          |   PostgreSQL    |
-                          |  (5432)        |
-                          +---+----+---+---+
-                              |    |   |   |
-                 +------------+    |   |   +------------+
-                 |                 |   |                 |
-          +------+------+  +------+------+  +------+------+  +------+------+
-          | user-service |  |product-serv.|  |order-service|  |payment-serv.|
-          |   :8080      |  |   :8081     |  |   :8082     |  |   :8083     |
-          +------+-------+  +------+------+  +------+------+  +------+------+
-                 |                 |                 |                 |
-                 |                 |     Connect RPC |     Connect RPC |
-                 |                 |    +------------+    +------------+
-                 |                 |    |                 |
-                 |                 +<---+  (stock check/  |
-                 +<----------------------------deduct)    |
-                   (user verify)   |                      |
-                                   |         +------------+
-                                   |         | (get order /
-                                   |         |  update status)
-                                   +<--------+
+                      +-------------------+
+                      |   Admin Panel     |
+                      |  Next.js (:3000)  |
+                      +--------+----------+
+                               | API Proxy (rewrites)
+          +----------+---------+---------+----------+
+          |          |                   |          |
+   +------+------+  +------+------+  +------+------+  +------+------+
+   | user-service |  |product-serv.|  |order-service|  |payment-serv.|
+   |   :8080      |  |   :8081     |  |   :8082     |  |   :8083     |
+   +------+-------+  +------+------+  +------+------+  +------+------+
+          |                 |                 |                 |
+          |                 |     Connect RPC |     Connect RPC |
+          |                 |    +------------+    +------------+
+          |                 |    |                 |
+          |                 +<---+  (stock check/  |
+          +<----------------------------deduct)    |
+            (user verify)   |                      |
+                            |         +------------+
+                            |         | (get order /
+                            |         |  update status)
+                            +<--------+
+          +----------+---------+---------+----------+
+          |          |                   |          |
+   +------+------+------+------+------+------+------+------+
+   |           PostgreSQL (5432)                            |
+   |  user_db  | product_db | order_db  | payment_db       |
+   +-----------------------------------------------------------+
 ```
 
-### Service Dependencies (Connect RPC)
+### Service Dependencies
 
 ```mermaid
 graph LR
-    A[order-service :8082] -->|GetUser| B[user-service :8080]
-    A -->|GetProduct / UpdateStock| C[product-service :8081]
-    D[payment-service :8083] -->|GetOrder / UpdateOrderStatus / CancelOrder| A
+    UI[Admin Panel :3000] -->|API Proxy| B[user-service :8080]
+    UI -->|API Proxy| C[product-service :8081]
+    UI -->|API Proxy| A[order-service :8082]
+    UI -->|API Proxy| D[payment-service :8083]
+    A -->|GetUser| B
+    A -->|GetProduct / UpdateStock| C
+    D -->|GetOrder / UpdateOrderStatus / CancelOrder| A
 ```
 
 ### Sequence: Order Creation
@@ -84,6 +94,8 @@ sequenceDiagram
 
 ## Tech Stack
 
+### Backend
+
 | Category | Technology |
 |----------|-----------|
 | Language | Go 1.26 |
@@ -95,6 +107,15 @@ sequenceDiagram
 | Code Generation | [Buf](https://buf.build/) CLI |
 | API Docs | [protoc-gen-doc](https://github.com/pseudomuto/protoc-gen-doc) |
 | Container | Docker Compose |
+
+### Frontend (Admin Panel)
+
+| Category | Technology |
+|----------|-----------|
+| Framework | [Next.js](https://nextjs.org/) 15 (App Router) |
+| UI Library | [React](https://react.dev/) 18 |
+| Styling | [Tailwind CSS](https://tailwindcss.com/) v4 |
+| Language | TypeScript 5 |
 
 ## Project Structure
 
@@ -155,6 +176,25 @@ sequenceDiagram
 ├── docs/
 │   └── index.html                  # Auto-generated API documentation
 │
+├── web/                            # Admin Panel (Next.js)
+│   ├── src/
+│   │   ├── app/                    #   App Router pages
+│   │   │   ├── page.tsx            #     Dashboard (stats, recent orders, low stock)
+│   │   │   ├── users/page.tsx      #     Users management
+│   │   │   ├── products/page.tsx   #     Products & stock management
+│   │   │   ├── orders/page.tsx     #     Orders management
+│   │   │   ├── payments/page.tsx   #     Payments management
+│   │   │   ├── layout.tsx          #     Root layout with sidebar
+│   │   │   └── globals.css         #     Tailwind v4 theme tokens
+│   │   ├── components/
+│   │   │   ├── sidebar.tsx         #     Navigation sidebar
+│   │   │   └── modal.tsx           #     Reusable modal & form components
+│   │   └── lib/
+│   │       └── api.ts              #     Connect RPC client wrapper & types
+│   ├── next.config.ts              #   API proxy rewrites
+│   ├── package.json
+│   └── tsconfig.json
+│
 ├── docker-compose.yaml             # All services + PostgreSQL
 ├── Dockerfile                      # Multi-stage build (shared by all services)
 ├── Makefile
@@ -214,6 +254,27 @@ sequenceDiagram
 | `RefundPayment` | 全額返金 (決済を REFUNDED → 注文をキャンセル → 在庫復元) |
 
 > 決済処理は学習目的のためシミュレーション (常に成功) です。
+
+### Admin Panel (`:3000`)
+
+Next.js (App Router) + React + Tailwind CSS で構築した管理画面。各マイクロサービスの API を GUI から操作できます。
+
+| Page | Features |
+|------|----------|
+| **Dashboard** | 統計カード (ユーザー数・商品数・注文数・売上)、直近の注文一覧、在庫アラート |
+| **Users** | ユーザー一覧・新規作成・削除 |
+| **Products** | 商品一覧・新規作成・削除・在庫調整 (入庫/出庫) |
+| **Orders** | 注文一覧 (ステータスフィルタ)・新規作成 (ユーザー/商品選択)・詳細表示・キャンセル |
+| **Payments** | 決済一覧・新規決済 (Pending 注文から選択)・返金 |
+
+API 通信は Next.js の [rewrites](https://nextjs.org/docs/app/api-reference/config/next-config-js/rewrites) でプロキシし、CORS を回避しています。
+
+```
+/api/user/*    → http://localhost:8080/*   (user-service)
+/api/product/* → http://localhost:8081/*   (product-service)
+/api/order/*   → http://localhost:8082/*   (order-service)
+/api/payment/* → http://localhost:8083/*   (payment-service)
+```
 
 ## Database
 
@@ -306,18 +367,27 @@ erDiagram
 - [Docker](https://www.docker.com/) & Docker Compose
 - [Go](https://go.dev/) 1.26+
 - [Buf CLI](https://buf.build/docs/installation) (Proto コード生成用)
+- [Node.js](https://nodejs.org/) 18+ (Admin Panel 用)
 
 ### Quick Start
 
 ```bash
-# 1. Build & start all services
+# 1. Build & start all backend services
 make build
 make up
 
 # 2. Check all containers are running
 docker compose ps
 
-# 3. Try the API (see Usage section below)
+# 3. Start the admin panel
+cd web
+npm install
+npm run dev
+
+# 4. Open the admin panel
+open http://localhost:3000
+
+# Or try the API directly (see Usage section below)
 ```
 
 ### Makefile Commands
@@ -439,3 +509,5 @@ open docs/index.html
 | **Denormalized product_name in order_items** | 注文時点の商品名を保持。後の商品名変更に影響されない |
 | **Simulated payment** | 学習目的のため決済処理は常に成功するシミュレーション |
 | **Shared Dockerfile with ARG** | 4サービスで1つの Dockerfile を共有。`SERVICE_NAME` ARG でビルド対象を切替 |
+| **Next.js Rewrites for API Proxy** | フロントエンドから各サービスへの通信を Next.js の rewrites でプロキシ。CORS 設定不要 |
+| **Dark Theme Admin Panel** | Tailwind CSS v4 のカスタムテーマトークンでダークテーマを統一的に管理 |
