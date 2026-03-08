@@ -1,4 +1,4 @@
-.PHONY: proto build up down logs clean test docs
+.PHONY: proto build up down logs clean test docs logs-web
 
 proto:
 	cd proto && buf generate
@@ -32,6 +32,9 @@ logs-order:
 
 logs-payment:
 	docker compose logs -f payment-service
+
+logs-web:
+	docker compose logs -f web
 
 docs:
 	./scripts/gen-docs.sh

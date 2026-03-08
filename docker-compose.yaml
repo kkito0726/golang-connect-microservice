@@ -87,5 +87,21 @@ services:
       migrate:
         condition: service_completed_successfully
 
+  web:
+    build:
+      context: ./web
+    ports:
+      - "3000:3000"
+    environment:
+      USER_SERVICE_URL: http://user-service:8080
+      PRODUCT_SERVICE_URL: http://product-service:8080
+      ORDER_SERVICE_URL: http://order-service:8080
+      PAYMENT_SERVICE_URL: http://payment-service:8080
+    depends_on:
+      - user-service
+      - product-service
+      - order-service
+      - payment-service
+
 volumes:
   postgres_data:

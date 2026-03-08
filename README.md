@@ -365,30 +365,27 @@ erDiagram
 ### Prerequisites
 
 - [Docker](https://www.docker.com/) & Docker Compose
-- [Go](https://go.dev/) 1.26+
+- [Go](https://go.dev/) 1.26+ (Proto コード生成・ローカル開発用)
 - [Buf CLI](https://buf.build/docs/installation) (Proto コード生成用)
-- [Node.js](https://nodejs.org/) 18+ (Admin Panel 用)
+- [Node.js](https://nodejs.org/) 18+ (Admin Panel ローカル開発用、Docker 利用時は不要)
 
 ### Quick Start
 
 ```bash
-# 1. Build & start all backend services
+# 1. Build & start all services (backend + admin panel)
 make build
 make up
 
 # 2. Check all containers are running
 docker compose ps
 
-# 3. Start the admin panel
-cd web
-npm install
-npm run dev
-
-# 4. Open the admin panel
+# 3. Open the admin panel
 open http://localhost:3000
 
 # Or try the API directly (see Usage section below)
 ```
+
+> **ローカル開発**: Admin Panel を Hot Reload で開発する場合は `cd web && npm install && npm run dev` で起動できます。
 
 ### Makefile Commands
 
@@ -400,6 +397,7 @@ open http://localhost:3000
 | `make down-v` | 全サービスを停止 + データ削除 |
 | `make logs` | 全サービスのログを表示 |
 | `make logs-user` | user-service のログを表示 |
+| `make logs-web` | Admin Panel のログを表示 |
 | `make proto` | Proto ファイルから Go コードを再生成 |
 | `make lint` | Proto ファイルの Lint |
 | `make docs` | API ドキュメントを HTML で生成 |
