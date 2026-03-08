@@ -1,0 +1,1073 @@
+{
+	"info": {
+		"_postman_id": "inventory-mgmt-connect-rpc",
+		"name": "Inventory Management - Connect RPC",
+		"description": "Go + Connect RPC microservices for inventory management.\n\nServices:\n- User Service (:8080)\n- Product Service (:8081)\n- Order Service (:8082)\n- Payment Service (:8083)\n\nConnect RPC uses JSON over HTTP POST. All endpoints follow the pattern:\n`POST http://<host>:<port>/<package>.<Service>/<Method>`",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "user_id",
+			"value": ""
+		},
+		{
+			"key": "product_id",
+			"value": ""
+		},
+		{
+			"key": "order_id",
+			"value": ""
+		},
+		{
+			"key": "payment_id",
+			"value": ""
+		}
+	],
+	"item": [
+		{
+			"name": "User Service",
+			"description": "User registration and profile management.\nPort: 8080",
+			"item": [
+				{
+					"name": "CreateUser",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"if (res.user && res.user.id) {",
+									"    pm.collectionVariables.set('user_id', res.user.id);",
+									"    console.log('Saved user_id:', res.user.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"tanaka@example.com\",\n  \"name\": \"Tanaka Taro\",\n  \"password\": \"pass1234\",\n  \"role\": \"ROLE_CUSTOMER\"\n}"
+						},
+						"url": {
+							"raw": "{{user_service_url}}/user.v1.UserService/CreateUser",
+							"host": ["{{user_service_url}}"],
+							"path": ["user.v1.UserService", "CreateUser"]
+						},
+						"description": "Register a new user.\n\nRoles: `ROLE_CUSTOMER`, `ROLE_ADMIN`\n\nThe user_id is automatically saved to collection variables for subsequent requests."
+					}
+				},
+				{
+					"name": "GetUser",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"{{user_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{user_service_url}}/user.v1.UserService/GetUser",
+							"host": ["{{user_service_url}}"],
+							"path": ["user.v1.UserService", "GetUser"]
+						},
+						"description": "Fetch a user by ID. Returns NOT_FOUND if the user does not exist or is soft-deleted."
+					}
+				},
+				{
+					"name": "ListUsers",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"pageSize\": 20,\n  \"page\": 1\n}"
+						},
+						"url": {
+							"raw": "{{user_service_url}}/user.v1.UserService/ListUsers",
+							"host": ["{{user_service_url}}"],
+							"path": ["user.v1.UserService", "ListUsers"]
+						},
+						"description": "List active users with pagination."
+					}
+				},
+				{
+					"name": "UpdateUser",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"{{user_id}}\",\n  \"name\": \"Tanaka Jiro\",\n  \"email\": \"jiro@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{user_service_url}}/user.v1.UserService/UpdateUser",
+							"host": ["{{user_service_url}}"],
+							"path": ["user.v1.UserService", "UpdateUser"]
+						},
+						"description": "Update user name and email."
+					}
+				},
+				{
+					"name": "DeleteUser",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"{{user_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{user_service_url}}/user.v1.UserService/DeleteUser",
+							"host": ["{{user_service_url}}"],
+							"path": ["user.v1.UserService", "DeleteUser"]
+						},
+						"description": "Soft-delete a user. The user will no longer appear in ListUsers or GetUser."
+					}
+				},
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{user_service_url}}/healthz",
+							"host": ["{{user_service_url}}"],
+							"path": ["healthz"]
+						},
+						"description": "Health check endpoint."
+					}
+				}
+			]
+		},
+		{
+			"name": "Product Service",
+			"description": "Product catalog and inventory management.\nPort: 8081",
+			"item": [
+				{
+					"name": "CreateProduct",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"if (res.product && res.product.id) {",
+									"    pm.collectionVariables.set('product_id', res.product.id);",
+									"    console.log('Saved product_id:', res.product.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"sku\": \"LAPTOP-001\",\n  \"name\": \"MacBook Pro\",\n  \"description\": \"Apple laptop 14 inch\",\n  \"priceCents\": 199900,\n  \"stockQuantity\": 10,\n  \"category\": \"electronics\"\n}"
+						},
+						"url": {
+							"raw": "{{product_service_url}}/product.v1.ProductService/CreateProduct",
+							"host": ["{{product_service_url}}"],
+							"path": ["product.v1.ProductService", "CreateProduct"]
+						},
+						"description": "Register a new product.\n\n- `priceCents`: Price in cents (199900 = $1,999.00)\n- `sku`: Must be unique\n\nThe product_id is automatically saved to collection variables."
+					}
+				},
+				{
+					"name": "CreateProduct (2nd item)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"if (res.product && res.product.id) {",
+									"    pm.collectionVariables.set('product_id_2', res.product.id);",
+									"    console.log('Saved product_id_2:', res.product.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"sku\": \"MOUSE-001\",\n  \"name\": \"Magic Mouse\",\n  \"description\": \"Apple wireless mouse\",\n  \"priceCents\": 9900,\n  \"stockQuantity\": 50,\n  \"category\": \"electronics\"\n}"
+						},
+						"url": {
+							"raw": "{{product_service_url}}/product.v1.ProductService/CreateProduct",
+							"host": ["{{product_service_url}}"],
+							"path": ["product.v1.ProductService", "CreateProduct"]
+						},
+						"description": "Register a second product for testing multi-item orders."
+					}
+				},
+				{
+					"name": "GetProduct",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"{{product_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{product_service_url}}/product.v1.ProductService/GetProduct",
+							"host": ["{{product_service_url}}"],
+							"path": ["product.v1.ProductService", "GetProduct"]
+						},
+						"description": "Fetch a product by ID."
+					}
+				},
+				{
+					"name": "ListProducts",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"pageSize\": 20,\n  \"page\": 1\n}"
+						},
+						"url": {
+							"raw": "{{product_service_url}}/product.v1.ProductService/ListProducts",
+							"host": ["{{product_service_url}}"],
+							"path": ["product.v1.ProductService", "ListProducts"]
+						},
+						"description": "List products with pagination. Optionally filter by `category`."
+					}
+				},
+				{
+					"name": "ListProducts (by category)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"pageSize\": 20,\n  \"page\": 1,\n  \"category\": \"electronics\"\n}"
+						},
+						"url": {
+							"raw": "{{product_service_url}}/product.v1.ProductService/ListProducts",
+							"host": ["{{product_service_url}}"],
+							"path": ["product.v1.ProductService", "ListProducts"]
+						},
+						"description": "List products filtered by category."
+					}
+				},
+				{
+					"name": "UpdateProduct",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"{{product_id}}\",\n  \"name\": \"MacBook Pro M4\",\n  \"description\": \"Apple laptop 14 inch with M4 chip\",\n  \"priceCents\": 219900,\n  \"category\": \"electronics\"\n}"
+						},
+						"url": {
+							"raw": "{{product_service_url}}/product.v1.ProductService/UpdateProduct",
+							"host": ["{{product_service_url}}"],
+							"path": ["product.v1.ProductService", "UpdateProduct"]
+						},
+						"description": "Update product metadata. Does NOT change stock (use UpdateStock instead)."
+					}
+				},
+				{
+					"name": "UpdateStock (restock +5)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"productId\": \"{{product_id}}\",\n  \"delta\": 5,\n  \"reason\": \"STOCK_CHANGE_REASON_RESTOCK\"\n}"
+						},
+						"url": {
+							"raw": "{{product_service_url}}/product.v1.ProductService/UpdateStock",
+							"host": ["{{product_service_url}}"],
+							"path": ["product.v1.ProductService", "UpdateStock"]
+						},
+						"description": "Add stock.\n\n- `delta`: positive = add, negative = remove\n- `reason`: RESTOCK, SALE, ADJUSTMENT, RETURN\n- Uses SELECT ... FOR UPDATE for concurrency safety"
+					}
+				},
+				{
+					"name": "UpdateStock (adjustment -3)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"productId\": \"{{product_id}}\",\n  \"delta\": -3,\n  \"reason\": \"STOCK_CHANGE_REASON_ADJUSTMENT\"\n}"
+						},
+						"url": {
+							"raw": "{{product_service_url}}/product.v1.ProductService/UpdateStock",
+							"host": ["{{product_service_url}}"],
+							"path": ["product.v1.ProductService", "UpdateStock"]
+						},
+						"description": "Remove stock manually. Returns FAILED_PRECONDITION if stock would go below 0."
+					}
+				},
+				{
+					"name": "GetStockLevel",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"productId\": \"{{product_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{product_service_url}}/product.v1.ProductService/GetStockLevel",
+							"host": ["{{product_service_url}}"],
+							"path": ["product.v1.ProductService", "GetStockLevel"]
+						},
+						"description": "Get current stock quantity and recent movement audit trail (up to 10 entries)."
+					}
+				},
+				{
+					"name": "DeleteProduct",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"{{product_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{product_service_url}}/product.v1.ProductService/DeleteProduct",
+							"host": ["{{product_service_url}}"],
+							"path": ["product.v1.ProductService", "DeleteProduct"]
+						},
+						"description": "Soft-delete a product."
+					}
+				}
+			]
+		},
+		{
+			"name": "Order Service",
+			"description": "Order management.\nPort: 8082\n\nCross-service calls:\n- user-service (verify user)\n- product-service (check/deduct stock)",
+			"item": [
+				{
+					"name": "CreateOrder (single item)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"if (res.order && res.order.id) {",
+									"    pm.collectionVariables.set('order_id', res.order.id);",
+									"    console.log('Saved order_id:', res.order.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": \"{{user_id}}\",\n  \"items\": [\n    {\n      \"productId\": \"{{product_id}}\",\n      \"quantity\": 2\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{order_service_url}}/order.v1.OrderService/CreateOrder",
+							"host": ["{{order_service_url}}"],
+							"path": ["order.v1.OrderService", "CreateOrder"]
+						},
+						"description": "Place a new order.\n\nThis triggers cross-service calls:\n1. order-service -> user-service: GetUser (verify exists)\n2. order-service -> product-service: GetProduct (check stock)\n3. order-service -> product-service: UpdateStock (deduct)\n\nOrder is created with status PENDING.\nThe order_id is automatically saved to collection variables."
+					}
+				},
+				{
+					"name": "CreateOrder (multiple items)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"if (res.order && res.order.id) {",
+									"    pm.collectionVariables.set('order_id_multi', res.order.id);",
+									"    console.log('Saved order_id_multi:', res.order.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": \"{{user_id}}\",\n  \"items\": [\n    {\n      \"productId\": \"{{product_id}}\",\n      \"quantity\": 1\n    },\n    {\n      \"productId\": \"{{product_id_2}}\",\n      \"quantity\": 3\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{order_service_url}}/order.v1.OrderService/CreateOrder",
+							"host": ["{{order_service_url}}"],
+							"path": ["order.v1.OrderService", "CreateOrder"]
+						},
+						"description": "Place an order with multiple product items.\n\nRequires both product_id and product_id_2 to be set (run both CreateProduct requests first)."
+					}
+				},
+				{
+					"name": "GetOrder",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"{{order_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{order_service_url}}/order.v1.OrderService/GetOrder",
+							"host": ["{{order_service_url}}"],
+							"path": ["order.v1.OrderService", "GetOrder"]
+						},
+						"description": "Fetch a single order by ID including all line items."
+					}
+				},
+				{
+					"name": "ListOrders (all)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"pageSize\": 20,\n  \"page\": 1\n}"
+						},
+						"url": {
+							"raw": "{{order_service_url}}/order.v1.OrderService/ListOrders",
+							"host": ["{{order_service_url}}"],
+							"path": ["order.v1.OrderService", "ListOrders"]
+						},
+						"description": "List all orders with pagination."
+					}
+				},
+				{
+					"name": "ListOrders (by user)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": \"{{user_id}}\",\n  \"pageSize\": 20,\n  \"page\": 1\n}"
+						},
+						"url": {
+							"raw": "{{order_service_url}}/order.v1.OrderService/ListOrders",
+							"host": ["{{order_service_url}}"],
+							"path": ["order.v1.OrderService", "ListOrders"]
+						},
+						"description": "List orders for a specific user."
+					}
+				},
+				{
+					"name": "ListOrders (by status)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"ORDER_STATUS_PENDING\",\n  \"pageSize\": 20,\n  \"page\": 1\n}"
+						},
+						"url": {
+							"raw": "{{order_service_url}}/order.v1.OrderService/ListOrders",
+							"host": ["{{order_service_url}}"],
+							"path": ["order.v1.OrderService", "ListOrders"]
+						},
+						"description": "List orders filtered by status.\n\nStatuses: PENDING, CONFIRMED, SHIPPED, DELIVERED, CANCELLED"
+					}
+				},
+				{
+					"name": "UpdateOrderStatus (shipped)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"{{order_id}}\",\n  \"status\": \"ORDER_STATUS_SHIPPED\"\n}"
+						},
+						"url": {
+							"raw": "{{order_service_url}}/order.v1.OrderService/UpdateOrderStatus",
+							"host": ["{{order_service_url}}"],
+							"path": ["order.v1.OrderService", "UpdateOrderStatus"]
+						},
+						"description": "Manually update order status.\n\nTypical flow: PENDING -> CONFIRMED -> SHIPPED -> DELIVERED"
+					}
+				},
+				{
+					"name": "CancelOrder",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"{{order_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{order_service_url}}/order.v1.OrderService/CancelOrder",
+							"host": ["{{order_service_url}}"],
+							"path": ["order.v1.OrderService", "CancelOrder"]
+						},
+						"description": "Cancel a pending order.\n\nThis triggers: order-service -> product-service UpdateStock (restore stock)\n\nOnly orders with status PENDING can be cancelled."
+					}
+				}
+			]
+		},
+		{
+			"name": "Payment Service",
+			"description": "Payment processing and refunds.\nPort: 8083\n\nCross-service calls:\n- order-service (get order / update status / cancel)",
+			"item": [
+				{
+					"name": "CreatePayment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"if (res.payment && res.payment.id) {",
+									"    pm.collectionVariables.set('payment_id', res.payment.id);",
+									"    console.log('Saved payment_id:', res.payment.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"orderId\": \"{{order_id}}\",\n  \"userId\": \"{{user_id}}\",\n  \"method\": \"PAYMENT_METHOD_CREDIT_CARD\"\n}"
+						},
+						"url": {
+							"raw": "{{payment_service_url}}/payment.v1.PaymentService/CreatePayment",
+							"host": ["{{payment_service_url}}"],
+							"path": ["payment.v1.PaymentService", "CreatePayment"]
+						},
+						"description": "Process a payment for an order.\n\nThis triggers:\n1. payment-service -> order-service: GetOrder (get amount)\n2. Simulate payment (always succeeds)\n3. payment-service -> order-service: UpdateOrderStatus (CONFIRMED)\n\nMethods: CREDIT_CARD, BANK_TRANSFER, WALLET\n\nThe payment_id is automatically saved to collection variables."
+					}
+				},
+				{
+					"name": "GetPayment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"{{payment_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{payment_service_url}}/payment.v1.PaymentService/GetPayment",
+							"host": ["{{payment_service_url}}"],
+							"path": ["payment.v1.PaymentService", "GetPayment"]
+						},
+						"description": "Fetch a single payment by ID."
+					}
+				},
+				{
+					"name": "ListPayments (by order)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"orderId\": \"{{order_id}}\",\n  \"pageSize\": 20,\n  \"page\": 1\n}"
+						},
+						"url": {
+							"raw": "{{payment_service_url}}/payment.v1.PaymentService/ListPayments",
+							"host": ["{{payment_service_url}}"],
+							"path": ["payment.v1.PaymentService", "ListPayments"]
+						},
+						"description": "List payments for a specific order."
+					}
+				},
+				{
+					"name": "ListPayments (by user)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": \"{{user_id}}\",\n  \"pageSize\": 20,\n  \"page\": 1\n}"
+						},
+						"url": {
+							"raw": "{{payment_service_url}}/payment.v1.PaymentService/ListPayments",
+							"host": ["{{payment_service_url}}"],
+							"path": ["payment.v1.PaymentService", "ListPayments"]
+						},
+						"description": "List payments for a specific user."
+					}
+				},
+				{
+					"name": "RefundPayment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"{{payment_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{payment_service_url}}/payment.v1.PaymentService/RefundPayment",
+							"host": ["{{payment_service_url}}"],
+							"path": ["payment.v1.PaymentService", "RefundPayment"]
+						},
+						"description": "Refund a completed payment.\n\nThis triggers a chain:\n1. payment status -> REFUNDED\n2. payment-service -> order-service: CancelOrder\n3. order-service -> product-service: UpdateStock (restore stock)\n\nOnly COMPLETED payments can be refunded."
+					}
+				}
+			]
+		},
+		{
+			"name": "E2E Scenarios",
+			"description": "End-to-end test scenarios. Run these folders in order using Postman Collection Runner.",
+			"item": [
+				{
+					"name": "Happy Path: Order & Payment",
+					"description": "Full flow: user -> product -> order -> payment -> verify stock",
+					"item": [
+						{
+							"name": "1. Create User",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('User created', () => {",
+											"    pm.response.to.have.status(200);",
+											"    const res = pm.response.json();",
+											"    pm.expect(res.user.id).to.be.a('string');",
+											"    pm.collectionVariables.set('user_id', res.user.id);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"email\": \"e2e-test@example.com\",\n  \"name\": \"E2E Test User\",\n  \"password\": \"testpass\",\n  \"role\": \"ROLE_CUSTOMER\"\n}"
+								},
+								"url": {
+									"raw": "{{user_service_url}}/user.v1.UserService/CreateUser",
+									"host": ["{{user_service_url}}"],
+									"path": ["user.v1.UserService", "CreateUser"]
+								}
+							}
+						},
+						{
+							"name": "2. Create Product",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Product created with stock 10', () => {",
+											"    pm.response.to.have.status(200);",
+											"    const res = pm.response.json();",
+											"    pm.expect(res.product.stockQuantity).to.eql(10);",
+											"    pm.collectionVariables.set('product_id', res.product.id);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"sku\": \"E2E-PROD-001\",\n  \"name\": \"Test Product\",\n  \"description\": \"For E2E testing\",\n  \"priceCents\": 10000,\n  \"stockQuantity\": 10,\n  \"category\": \"test\"\n}"
+								},
+								"url": {
+									"raw": "{{product_service_url}}/product.v1.ProductService/CreateProduct",
+									"host": ["{{product_service_url}}"],
+									"path": ["product.v1.ProductService", "CreateProduct"]
+								}
+							}
+						},
+						{
+							"name": "3. Create Order (qty 3)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Order created with PENDING status', () => {",
+											"    pm.response.to.have.status(200);",
+											"    const res = pm.response.json();",
+											"    pm.expect(res.order.status).to.eql('ORDER_STATUS_PENDING');",
+											"    pm.expect(res.order.totalCents).to.eql('30000');",
+											"    pm.collectionVariables.set('order_id', res.order.id);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"userId\": \"{{user_id}}\",\n  \"items\": [{\"productId\": \"{{product_id}}\", \"quantity\": 3}]\n}"
+								},
+								"url": {
+									"raw": "{{order_service_url}}/order.v1.OrderService/CreateOrder",
+									"host": ["{{order_service_url}}"],
+									"path": ["order.v1.OrderService", "CreateOrder"]
+								}
+							}
+						},
+						{
+							"name": "4. Verify Stock Deducted (10 -> 7)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Stock deducted to 7', () => {",
+											"    pm.response.to.have.status(200);",
+											"    const res = pm.response.json();",
+											"    pm.expect(res.stockQuantity).to.eql(7);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"productId\": \"{{product_id}}\"\n}"
+								},
+								"url": {
+									"raw": "{{product_service_url}}/product.v1.ProductService/GetStockLevel",
+									"host": ["{{product_service_url}}"],
+									"path": ["product.v1.ProductService", "GetStockLevel"]
+								}
+							}
+						},
+						{
+							"name": "5. Pay for Order",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Payment completed', () => {",
+											"    pm.response.to.have.status(200);",
+											"    const res = pm.response.json();",
+											"    pm.expect(res.payment.status).to.eql('PAYMENT_STATUS_COMPLETED');",
+											"    pm.expect(res.payment.amountCents).to.eql('30000');",
+											"    pm.collectionVariables.set('payment_id', res.payment.id);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"orderId\": \"{{order_id}}\",\n  \"userId\": \"{{user_id}}\",\n  \"method\": \"PAYMENT_METHOD_CREDIT_CARD\"\n}"
+								},
+								"url": {
+									"raw": "{{payment_service_url}}/payment.v1.PaymentService/CreatePayment",
+									"host": ["{{payment_service_url}}"],
+									"path": ["payment.v1.PaymentService", "CreatePayment"]
+								}
+							}
+						},
+						{
+							"name": "6. Verify Order CONFIRMED",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Order confirmed after payment', () => {",
+											"    pm.response.to.have.status(200);",
+											"    const res = pm.response.json();",
+											"    pm.expect(res.order.status).to.eql('ORDER_STATUS_CONFIRMED');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"id\": \"{{order_id}}\"\n}"
+								},
+								"url": {
+									"raw": "{{order_service_url}}/order.v1.OrderService/GetOrder",
+									"host": ["{{order_service_url}}"],
+									"path": ["order.v1.OrderService", "GetOrder"]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "Refund: Payment -> Cancel -> Restore Stock",
+					"description": "Refund flow: refund payment -> cancel order -> restore stock.\nRun after 'Happy Path' scenario.",
+					"item": [
+						{
+							"name": "1. Refund Payment",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Payment refunded', () => {",
+											"    pm.response.to.have.status(200);",
+											"    const res = pm.response.json();",
+											"    pm.expect(res.payment.status).to.eql('PAYMENT_STATUS_REFUNDED');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"id\": \"{{payment_id}}\"\n}"
+								},
+								"url": {
+									"raw": "{{payment_service_url}}/payment.v1.PaymentService/RefundPayment",
+									"host": ["{{payment_service_url}}"],
+									"path": ["payment.v1.PaymentService", "RefundPayment"]
+								}
+							}
+						},
+						{
+							"name": "2. Verify Order CANCELLED",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Order cancelled after refund', () => {",
+											"    pm.response.to.have.status(200);",
+											"    const res = pm.response.json();",
+											"    pm.expect(res.order.status).to.eql('ORDER_STATUS_CANCELLED');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"id\": \"{{order_id}}\"\n}"
+								},
+								"url": {
+									"raw": "{{order_service_url}}/order.v1.OrderService/GetOrder",
+									"host": ["{{order_service_url}}"],
+									"path": ["order.v1.OrderService", "GetOrder"]
+								}
+							}
+						},
+						{
+							"name": "3. Verify Stock Restored (7 -> 10)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Stock restored to 10', () => {",
+											"    pm.response.to.have.status(200);",
+											"    const res = pm.response.json();",
+											"    pm.expect(res.stockQuantity).to.eql(10);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"productId\": \"{{product_id}}\"\n}"
+								},
+								"url": {
+									"raw": "{{product_service_url}}/product.v1.ProductService/GetStockLevel",
+									"host": ["{{product_service_url}}"],
+									"path": ["product.v1.ProductService", "GetStockLevel"]
+								}
+							}
+						}
+					]
+				}
+			]
+		}
+	]
+}
