@@ -16,8 +16,10 @@ import (
 	"github.com/ken/connect-microservice/gen/payment/v1/paymentv1connect"
 	"github.com/ken/connect-microservice/internal/config"
 	"github.com/ken/connect-microservice/internal/db"
+	"github.com/ken/connect-microservice/services/payment/internal/client"
 	"github.com/ken/connect-microservice/services/payment/internal/handler"
 	"github.com/ken/connect-microservice/services/payment/internal/repository"
+	"github.com/ken/connect-microservice/services/payment/internal/usecase"
 )
 
 func main() {
@@ -36,7 +38,9 @@ func main() {
 	defer pool.Close()
 
 	repo := repository.NewPaymentRepository(pool)
-	h := handler.NewPaymentHandler(repo, cfg.OrderServiceURL)
+	orderClient := client.NewConnectOrderClient(cfg.OrderServiceURL)
+	uc := usecase.NewPaymentUsecase(repo, orderClient)
+	h := handler.NewPaymentHandler(uc)
 
 	mux := http.NewServeMux()
 	path, svcHandler := paymentv1connect.NewPaymentServiceHandler(h)

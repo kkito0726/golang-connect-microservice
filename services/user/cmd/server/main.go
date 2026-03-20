@@ -18,6 +18,7 @@ import (
 	"github.com/ken/connect-microservice/internal/db"
 	"github.com/ken/connect-microservice/services/user/internal/handler"
 	"github.com/ken/connect-microservice/services/user/internal/repository"
+	"github.com/ken/connect-microservice/services/user/internal/usecase"
 )
 
 func main() {
@@ -36,7 +37,8 @@ func main() {
 	defer pool.Close()
 
 	repo := repository.NewUserRepository(pool)
-	h := handler.NewUserHandler(repo)
+	uc := usecase.NewUserUsecase(repo)
+	h := handler.NewUserHandler(uc)
 
 	mux := http.NewServeMux()
 	path, svcHandler := userv1connect.NewUserServiceHandler(h)

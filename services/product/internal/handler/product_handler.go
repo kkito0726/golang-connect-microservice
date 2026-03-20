@@ -10,16 +10,17 @@ import (
 	productv1 "github.com/ken/connect-microservice/gen/product/v1"
 	"github.com/ken/connect-microservice/gen/product/v1/productv1connect"
 	"github.com/ken/connect-microservice/services/product/internal/repository"
+	"github.com/ken/connect-microservice/services/product/internal/usecase"
 )
 
 type ProductHandler struct {
-	repo *repository.ProductRepository
+	uc *usecase.ProductUsecase
 }
 
 var _ productv1connect.ProductServiceHandler = (*ProductHandler)(nil)
 
-func NewProductHandler(repo *repository.ProductRepository) *ProductHandler {
-	return &ProductHandler{repo: repo}
+func NewProductHandler(uc *usecase.ProductUsecase) *ProductHandler {
+	return &ProductHandler{uc: uc}
 }
 
 func (h *ProductHandler) CreateProduct(ctx context.Context, req *connect.Request[productv1.CreateProductRequest]) (*connect.Response[productv1.CreateProductResponse], error) {
@@ -27,7 +28,7 @@ func (h *ProductHandler) CreateProduct(ctx context.Context, req *connect.Request
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("sku and name are required"))
 	}
 
-	p, err := h.repo.Create(ctx, repository.Product{
+	p, err := h.uc.CreateProduct(ctx, repository.Product{
 		SKU:           req.Msg.Sku,
 		Name:          req.Msg.Name,
 		Description:   req.Msg.Description,
@@ -38,10 +39,7 @@ func (h *ProductHandler) CreateProduct(ctx context.Context, req *connect.Request
 	if err != nil {
 		return nil, connect.NewError(connect.CodeAlreadyExists, err)
 	}
-
-	return connect.NewResponse(&productv1.CreateProductResponse{
-		Product: toProtoProduct(p),
-	}), nil
+	return connect.NewResponse(&productv1.CreateProductResponse{Product: toProtoProduct(p)}), nil
 }
 
 func (h *ProductHandler) GetProduct(ctx context.Context, req *connect.Request[productv1.GetProductRequest]) (*connect.Response[productv1.GetProductResponse], error) {
@@ -49,27 +47,15 @@ func (h *ProductHandler) GetProduct(ctx context.Context, req *connect.Request[pr
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("id is required"))
 	}
 
-	p, err := h.repo.GetByID(ctx, req.Msg.Id)
+	p, err := h.uc.GetProduct(ctx, req.Msg.Id)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
-
-	return connect.NewResponse(&productv1.GetProductResponse{
-		Product: toProtoProduct(p),
-	}), nil
+	return connect.NewResponse(&productv1.GetProductResponse{Product: toProtoProduct(p)}), nil
 }
 
 func (h *ProductHandler) ListProducts(ctx context.Context, req *connect.Request[productv1.ListProductsRequest]) (*connect.Response[productv1.ListProductsResponse], error) {
-	pageSize := int(req.Msg.PageSize)
-	if pageSize <= 0 {
-		pageSize = 20
-	}
-	page := int(req.Msg.Page)
-	if page <= 0 {
-		page = 1
-	}
-
-	products, total, err := h.repo.List(ctx, pageSize, (page-1)*pageSize, req.Msg.Category)
+	products, total, err := h.uc.ListProducts(ctx, int(req.Msg.PageSize), int(req.Msg.Page), req.Msg.Category)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -78,7 +64,6 @@ func (h *ProductHandler) ListProducts(ctx context.Context, req *connect.Request[
 	for i, p := range products {
 		protoProducts[i] = toProtoProduct(p)
 	}
-
 	return connect.NewResponse(&productv1.ListProductsResponse{
 		Products:   protoProducts,
 		TotalCount: int32(total),
@@ -90,14 +75,11 @@ func (h *ProductHandler) UpdateProduct(ctx context.Context, req *connect.Request
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("id is required"))
 	}
 
-	p, err := h.repo.Update(ctx, req.Msg.Id, req.Msg.Name, req.Msg.Description, req.Msg.Category, req.Msg.PriceCents)
+	p, err := h.uc.UpdateProduct(ctx, req.Msg.Id, req.Msg.Name, req.Msg.Description, req.Msg.Category, req.Msg.PriceCents)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
-
-	return connect.NewResponse(&productv1.UpdateProductResponse{
-		Product: toProtoProduct(p),
-	}), nil
+	return connect.NewResponse(&productv1.UpdateProductResponse{Product: toProtoProduct(p)}), nil
 }
 
 func (h *ProductHandler) DeleteProduct(ctx context.Context, req *connect.Request[productv1.DeleteProductRequest]) (*connect.Response[productv1.DeleteProductResponse], error) {
@@ -105,10 +87,9 @@ func (h *ProductHandler) DeleteProduct(ctx context.Context, req *connect.Request
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("id is required"))
 	}
 
-	if err := h.repo.SoftDelete(ctx, req.Msg.Id); err != nil {
+	if err := h.uc.DeleteProduct(ctx, req.Msg.Id); err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
-
 	return connect.NewResponse(&productv1.DeleteProductResponse{}), nil
 }
 
@@ -117,12 +98,10 @@ func (h *ProductHandler) UpdateStock(ctx context.Context, req *connect.Request[p
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("product_id is required"))
 	}
 
-	reason := req.Msg.Reason.String()
-	p, mv, err := h.repo.UpdateStock(ctx, req.Msg.ProductId, req.Msg.Delta, reason, req.Msg.ReferenceId)
+	p, mv, err := h.uc.UpdateStock(ctx, req.Msg.ProductId, req.Msg.Delta, req.Msg.Reason.String(), req.Msg.ReferenceId)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeFailedPrecondition, err)
 	}
-
 	return connect.NewResponse(&productv1.UpdateStockResponse{
 		Product:  toProtoProduct(p),
 		Movement: toProtoStockMovement(mv),
@@ -134,21 +113,15 @@ func (h *ProductHandler) GetStockLevel(ctx context.Context, req *connect.Request
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("product_id is required"))
 	}
 
-	p, err := h.repo.GetByID(ctx, req.Msg.ProductId)
+	p, movements, err := h.uc.GetStockLevel(ctx, req.Msg.ProductId)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
-	}
-
-	movements, err := h.repo.GetStockMovements(ctx, req.Msg.ProductId, 10)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
 	protoMovements := make([]*productv1.StockMovement, len(movements))
 	for i, m := range movements {
 		protoMovements[i] = toProtoStockMovement(m)
 	}
-
 	return connect.NewResponse(&productv1.GetStockLevelResponse{
 		ProductId:       p.ID,
 		StockQuantity:   p.StockQuantity,

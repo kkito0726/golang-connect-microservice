@@ -5,22 +5,22 @@ import (
 	"fmt"
 
 	"connectrpc.com/connect"
-	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	userv1 "github.com/ken/connect-microservice/gen/user/v1"
 	"github.com/ken/connect-microservice/gen/user/v1/userv1connect"
 	"github.com/ken/connect-microservice/services/user/internal/repository"
+	"github.com/ken/connect-microservice/services/user/internal/usecase"
 )
 
 type UserHandler struct {
-	repo *repository.UserRepository
+	uc *usecase.UserUsecase
 }
 
 var _ userv1connect.UserServiceHandler = (*UserHandler)(nil)
 
-func NewUserHandler(repo *repository.UserRepository) *UserHandler {
-	return &UserHandler{repo: repo}
+func NewUserHandler(uc *usecase.UserUsecase) *UserHandler {
+	return &UserHandler{uc: uc}
 }
 
 func (h *UserHandler) CreateUser(ctx context.Context, req *connect.Request[userv1.CreateUserRequest]) (*connect.Response[userv1.CreateUserResponse], error) {
@@ -28,29 +28,16 @@ func (h *UserHandler) CreateUser(ctx context.Context, req *connect.Request[userv
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("email, name and password are required"))
 	}
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(req.Msg.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("hash password: %w", err))
-	}
-
 	role := "customer"
 	if req.Msg.Role == userv1.Role_ROLE_ADMIN {
 		role = "admin"
 	}
 
-	u, err := h.repo.Create(ctx, repository.User{
-		Email:        req.Msg.Email,
-		Name:         req.Msg.Name,
-		Role:         role,
-		PasswordHash: string(hash),
-	})
+	u, err := h.uc.CreateUser(ctx, req.Msg.Email, req.Msg.Name, req.Msg.Password, role)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeAlreadyExists, fmt.Errorf("create user: %w", err))
 	}
-
-	return connect.NewResponse(&userv1.CreateUserResponse{
-		User: toProtoUser(u),
-	}), nil
+	return connect.NewResponse(&userv1.CreateUserResponse{User: toProtoUser(u)}), nil
 }
 
 func (h *UserHandler) GetUser(ctx context.Context, req *connect.Request[userv1.GetUserRequest]) (*connect.Response[userv1.GetUserResponse], error) {
@@ -58,28 +45,15 @@ func (h *UserHandler) GetUser(ctx context.Context, req *connect.Request[userv1.G
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("id is required"))
 	}
 
-	u, err := h.repo.GetByID(ctx, req.Msg.Id)
+	u, err := h.uc.GetUser(ctx, req.Msg.Id)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
-
-	return connect.NewResponse(&userv1.GetUserResponse{
-		User: toProtoUser(u),
-	}), nil
+	return connect.NewResponse(&userv1.GetUserResponse{User: toProtoUser(u)}), nil
 }
 
 func (h *UserHandler) ListUsers(ctx context.Context, req *connect.Request[userv1.ListUsersRequest]) (*connect.Response[userv1.ListUsersResponse], error) {
-	pageSize := int(req.Msg.PageSize)
-	if pageSize <= 0 {
-		pageSize = 20
-	}
-	page := int(req.Msg.Page)
-	if page <= 0 {
-		page = 1
-	}
-	offset := (page - 1) * pageSize
-
-	users, total, err := h.repo.List(ctx, pageSize, offset)
+	users, total, err := h.uc.ListUsers(ctx, int(req.Msg.PageSize), int(req.Msg.Page))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -88,7 +62,6 @@ func (h *UserHandler) ListUsers(ctx context.Context, req *connect.Request[userv1
 	for i, u := range users {
 		protoUsers[i] = toProtoUser(u)
 	}
-
 	return connect.NewResponse(&userv1.ListUsersResponse{
 		Users:      protoUsers,
 		TotalCount: int32(total),
@@ -100,14 +73,11 @@ func (h *UserHandler) UpdateUser(ctx context.Context, req *connect.Request[userv
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("id is required"))
 	}
 
-	u, err := h.repo.Update(ctx, req.Msg.Id, req.Msg.Name, req.Msg.Email)
+	u, err := h.uc.UpdateUser(ctx, req.Msg.Id, req.Msg.Name, req.Msg.Email)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
-
-	return connect.NewResponse(&userv1.UpdateUserResponse{
-		User: toProtoUser(u),
-	}), nil
+	return connect.NewResponse(&userv1.UpdateUserResponse{User: toProtoUser(u)}), nil
 }
 
 func (h *UserHandler) DeleteUser(ctx context.Context, req *connect.Request[userv1.DeleteUserRequest]) (*connect.Response[userv1.DeleteUserResponse], error) {
@@ -115,10 +85,9 @@ func (h *UserHandler) DeleteUser(ctx context.Context, req *connect.Request[userv
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("id is required"))
 	}
 
-	if err := h.repo.SoftDelete(ctx, req.Msg.Id); err != nil {
+	if err := h.uc.DeleteUser(ctx, req.Msg.Id); err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
-
 	return connect.NewResponse(&userv1.DeleteUserResponse{}), nil
 }
 

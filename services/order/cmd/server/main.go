@@ -16,8 +16,10 @@ import (
 	"github.com/ken/connect-microservice/gen/order/v1/orderv1connect"
 	"github.com/ken/connect-microservice/internal/config"
 	"github.com/ken/connect-microservice/internal/db"
+	"github.com/ken/connect-microservice/services/order/internal/client"
 	"github.com/ken/connect-microservice/services/order/internal/handler"
 	"github.com/ken/connect-microservice/services/order/internal/repository"
+	"github.com/ken/connect-microservice/services/order/internal/usecase"
 )
 
 func main() {
@@ -36,7 +38,10 @@ func main() {
 	defer pool.Close()
 
 	repo := repository.NewOrderRepository(pool)
-	h := handler.NewOrderHandler(repo, cfg.ProductServiceURL, cfg.UserServiceURL)
+	productClient := client.NewConnectProductClient(cfg.ProductServiceURL)
+	userClient := client.NewConnectUserClient(cfg.UserServiceURL)
+	uc := usecase.NewOrderUsecase(repo, productClient, userClient)
+	h := handler.NewOrderHandler(uc)
 
 	mux := http.NewServeMux()
 	path, svcHandler := orderv1connect.NewOrderServiceHandler(h)
