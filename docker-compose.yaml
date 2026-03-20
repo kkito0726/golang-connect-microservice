@@ -93,6 +93,7 @@ services:
     ports:
       - "3000:3000"
     environment:
+      HOSTNAME: "0.0.0.0"
       USER_SERVICE_URL: http://user-service:8080
       PRODUCT_SERVICE_URL: http://product-service:8080
       ORDER_SERVICE_URL: http://order-service:8080
