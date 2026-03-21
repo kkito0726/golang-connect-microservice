@@ -2,10 +2,14 @@
 	"info": {
 		"_postman_id": "inventory-mgmt-connect-rpc",
 		"name": "Inventory Management - Connect RPC",
-		"description": "Go + Connect RPC microservices for inventory management.\n\nServices:\n- User Service (:8080)\n- Product Service (:8081)\n- Order Service (:8082)\n- Payment Service (:8083)\n\nConnect RPC uses JSON over HTTP POST. All endpoints follow the pattern:\n`POST http://<host>:<port>/<package>.<Service>/<Method>`",
+		"description": "Go + Connect RPC microservices for inventory management.\n\nServices:\n- User Service (:8080)\n- Product Service (:8081)\n- Order Service (:8082)\n- Payment Service (:8083)\n\nConnect RPC uses JSON over HTTP POST. All endpoints follow the pattern:\n`POST http://<host>:<port>/<package>.<Service>/<Method>`\n\n## Authentication\n\nMost endpoints require a JWT token. Use the `Login` request first to obtain a token.\nThe token is automatically saved to the `token` collection variable.\nAll protected requests use `Authorization: Bearer {{token}}`.\n\nPublic endpoints (no token required):\n- `UserService/CreateUser`\n- `UserService/Login`",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"variable": [
+		{
+			"key": "token",
+			"value": ""
+		},
 		{
 			"key": "user_id",
 			"value": ""
@@ -26,8 +30,49 @@
 	"item": [
 		{
 			"name": "User Service",
-			"description": "User registration and profile management.\nPort: 8080",
+			"description": "User registration, authentication, and profile management.\nPort: 8080",
 			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const res = pm.response.json();",
+									"if (res.accessToken) {",
+									"    pm.collectionVariables.set('token', res.accessToken);",
+									"    console.log('Saved token:', res.accessToken.substring(0, 30) + '...');",
+									"}",
+									"if (res.user && res.user.id) {",
+									"    pm.collectionVariables.set('user_id', res.user.id);",
+									"    console.log('Saved user_id:', res.user.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"tanaka@example.com\",\n  \"password\": \"pass1234\"\n}"
+						},
+						"url": {
+							"raw": "{{user_service_url}}/user.v1.UserService/Login",
+							"host": ["{{user_service_url}}"],
+							"path": ["user.v1.UserService", "Login"]
+						},
+						"description": "Authenticate with email and password.\n\nReturns a JWT access token that is automatically saved to the `token` collection variable.\nThe token must be included as `Authorization: Bearer {{token}}` in all subsequent protected requests.\n\n**Public endpoint — no Authorization header required.**"
+					}
+				},
 				{
 					"name": "CreateUser",
 					"event": [
@@ -62,7 +107,7 @@
 							"host": ["{{user_service_url}}"],
 							"path": ["user.v1.UserService", "CreateUser"]
 						},
-						"description": "Register a new user.\n\nRoles: `ROLE_CUSTOMER`, `ROLE_ADMIN`\n\nThe user_id is automatically saved to collection variables for subsequent requests."
+						"description": "Register a new user.\n\nRoles: `ROLE_CUSTOMER`, `ROLE_ADMIN`\n\nThe user_id is automatically saved to collection variables for subsequent requests.\n\n**Public endpoint — no Authorization header required.**"
 					}
 				},
 				{
@@ -73,6 +118,10 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
 							}
 						],
 						"body": {
@@ -95,6 +144,10 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
 							}
 						],
 						"body": {
@@ -117,6 +170,10 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
 							}
 						],
 						"body": {
@@ -139,6 +196,10 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
 							}
 						],
 						"body": {
@@ -194,6 +255,10 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
 							}
 						],
 						"body": {
@@ -231,6 +296,10 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
 							}
 						],
 						"body": {
@@ -253,6 +322,10 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
 							}
 						],
 						"body": {
@@ -275,6 +348,10 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
 							}
 						],
 						"body": {
@@ -297,6 +374,10 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
 							}
 						],
 						"body": {
@@ -319,6 +400,10 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
 							}
 						],
 						"body": {
@@ -341,6 +426,10 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
 							}
 						],
 						"body": {
@@ -363,6 +452,10 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
 							}
 						],
 						"body": {
@@ -385,6 +478,10 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
 							}
 						],
 						"body": {
@@ -407,6 +504,10 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
 							}
 						],
 						"body": {
@@ -450,6 +551,10 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
 							}
 						],
 						"body": {
@@ -461,7 +566,7 @@
 							"host": ["{{order_service_url}}"],
 							"path": ["order.v1.OrderService", "CreateOrder"]
 						},
-						"description": "Place a new order.\n\nThis triggers cross-service calls:\n1. order-service -> user-service: GetUser (verify exists)\n2. order-service -> product-service: GetProduct (check stock)\n3. order-service -> product-service: UpdateStock (deduct)\n\nOrder is created with status PENDING.\nThe order_id is automatically saved to collection variables."
+						"description": "Place a new order.\n\nThis triggers cross-service calls:\n1. order-service -> user-service: GetUser (verify exists)\n2. order-service -> product-service: GetProduct (check stock)\n3. order-service -> product-service: UpdateStock (deduct)\n\nThe JWT token is forwarded automatically to upstream services.\nOrder is created with status PENDING.\nThe order_id is automatically saved to collection variables."
 					}
 				},
 				{
@@ -487,6 +592,10 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
 							}
 						],
 						"body": {
@@ -509,6 +618,10 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
 							}
 						],
 						"body": {
@@ -531,6 +644,10 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
 							}
 						],
 						"body": {
@@ -553,6 +670,10 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
 							}
 						],
 						"body": {
@@ -575,6 +696,10 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
 							}
 						],
 						"body": {
@@ -597,6 +722,10 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
 							}
 						],
 						"body": {
@@ -619,6 +748,10 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
 							}
 						],
 						"body": {
@@ -662,6 +795,10 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
 							}
 						],
 						"body": {
@@ -673,7 +810,7 @@
 							"host": ["{{payment_service_url}}"],
 							"path": ["payment.v1.PaymentService", "CreatePayment"]
 						},
-						"description": "Process a payment for an order.\n\nThis triggers:\n1. payment-service -> order-service: GetOrder (get amount)\n2. Simulate payment (always succeeds)\n3. payment-service -> order-service: UpdateOrderStatus (CONFIRMED)\n\nMethods: CREDIT_CARD, BANK_TRANSFER, WALLET\n\nThe payment_id is automatically saved to collection variables."
+						"description": "Process a payment for an order.\n\nThis triggers:\n1. payment-service -> order-service: GetOrder (get amount)\n2. Simulate payment (always succeeds)\n3. payment-service -> order-service: UpdateOrderStatus (CONFIRMED)\n\nThe JWT token is forwarded automatically to order-service.\nMethods: CREDIT_CARD, BANK_TRANSFER, WALLET\n\nThe payment_id is automatically saved to collection variables."
 					}
 				},
 				{
@@ -684,6 +821,10 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
 							}
 						],
 						"body": {
@@ -706,6 +847,10 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
 							}
 						],
 						"body": {
@@ -728,6 +873,10 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
 							}
 						],
 						"body": {
@@ -750,6 +899,10 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
 							}
 						],
 						"body": {
@@ -772,7 +925,7 @@
 			"item": [
 				{
 					"name": "Happy Path: Order & Payment",
-					"description": "Full flow: user -> product -> order -> payment -> verify stock",
+					"description": "Full flow: register user -> login -> create product -> order -> payment -> verify stock",
 					"item": [
 						{
 							"name": "1. Create User",
@@ -807,7 +960,39 @@
 							}
 						},
 						{
-							"name": "2. Create Product",
+							"name": "2. Login",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test('Login successful', () => {",
+											"    pm.response.to.have.status(200);",
+											"    const res = pm.response.json();",
+											"    pm.expect(res.accessToken).to.be.a('string');",
+											"    pm.collectionVariables.set('token', res.accessToken);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"email\": \"e2e-test@example.com\",\n  \"password\": \"testpass\"\n}"
+								},
+								"url": {
+									"raw": "{{user_service_url}}/user.v1.UserService/Login",
+									"host": ["{{user_service_url}}"],
+									"path": ["user.v1.UserService", "Login"]
+								}
+							}
+						},
+						{
+							"name": "3. Create Product",
 							"event": [
 								{
 									"listen": "test",
@@ -826,7 +1011,10 @@
 							],
 							"request": {
 								"method": "POST",
-								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"header": [
+									{"key": "Content-Type", "value": "application/json"},
+									{"key": "Authorization", "value": "Bearer {{token}}"}
+								],
 								"body": {
 									"mode": "raw",
 									"raw": "{\n  \"sku\": \"E2E-PROD-001\",\n  \"name\": \"Test Product\",\n  \"description\": \"For E2E testing\",\n  \"priceCents\": 10000,\n  \"stockQuantity\": 10,\n  \"category\": \"test\"\n}"
@@ -839,7 +1027,7 @@
 							}
 						},
 						{
-							"name": "3. Create Order (qty 3)",
+							"name": "4. Create Order (qty 3)",
 							"event": [
 								{
 									"listen": "test",
@@ -859,7 +1047,10 @@
 							],
 							"request": {
 								"method": "POST",
-								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"header": [
+									{"key": "Content-Type", "value": "application/json"},
+									{"key": "Authorization", "value": "Bearer {{token}}"}
+								],
 								"body": {
 									"mode": "raw",
 									"raw": "{\n  \"userId\": \"{{user_id}}\",\n  \"items\": [{\"productId\": \"{{product_id}}\", \"quantity\": 3}]\n}"
@@ -872,7 +1063,7 @@
 							}
 						},
 						{
-							"name": "4. Verify Stock Deducted (10 -> 7)",
+							"name": "5. Verify Stock Deducted (10 -> 7)",
 							"event": [
 								{
 									"listen": "test",
@@ -890,7 +1081,10 @@
 							],
 							"request": {
 								"method": "POST",
-								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"header": [
+									{"key": "Content-Type", "value": "application/json"},
+									{"key": "Authorization", "value": "Bearer {{token}}"}
+								],
 								"body": {
 									"mode": "raw",
 									"raw": "{\n  \"productId\": \"{{product_id}}\"\n}"
@@ -903,7 +1097,7 @@
 							}
 						},
 						{
-							"name": "5. Pay for Order",
+							"name": "6. Pay for Order",
 							"event": [
 								{
 									"listen": "test",
@@ -923,7 +1117,10 @@
 							],
 							"request": {
 								"method": "POST",
-								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"header": [
+									{"key": "Content-Type", "value": "application/json"},
+									{"key": "Authorization", "value": "Bearer {{token}}"}
+								],
 								"body": {
 									"mode": "raw",
 									"raw": "{\n  \"orderId\": \"{{order_id}}\",\n  \"userId\": \"{{user_id}}\",\n  \"method\": \"PAYMENT_METHOD_CREDIT_CARD\"\n}"
@@ -936,7 +1133,7 @@
 							}
 						},
 						{
-							"name": "6. Verify Order CONFIRMED",
+							"name": "7. Verify Order CONFIRMED",
 							"event": [
 								{
 									"listen": "test",
@@ -954,7 +1151,10 @@
 							],
 							"request": {
 								"method": "POST",
-								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"header": [
+									{"key": "Content-Type", "value": "application/json"},
+									{"key": "Authorization", "value": "Bearer {{token}}"}
+								],
 								"body": {
 									"mode": "raw",
 									"raw": "{\n  \"id\": \"{{order_id}}\"\n}"
@@ -991,7 +1191,10 @@
 							],
 							"request": {
 								"method": "POST",
-								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"header": [
+									{"key": "Content-Type", "value": "application/json"},
+									{"key": "Authorization", "value": "Bearer {{token}}"}
+								],
 								"body": {
 									"mode": "raw",
 									"raw": "{\n  \"id\": \"{{payment_id}}\"\n}"
@@ -1022,7 +1225,10 @@
 							],
 							"request": {
 								"method": "POST",
-								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"header": [
+									{"key": "Content-Type", "value": "application/json"},
+									{"key": "Authorization", "value": "Bearer {{token}}"}
+								],
 								"body": {
 									"mode": "raw",
 									"raw": "{\n  \"id\": \"{{order_id}}\"\n}"
@@ -1053,7 +1259,10 @@
 							],
 							"request": {
 								"method": "POST",
-								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"header": [
+									{"key": "Content-Type", "value": "application/json"},
+									{"key": "Authorization", "value": "Bearer {{token}}"}
+								],
 								"body": {
 									"mode": "raw",
 									"raw": "{\n  \"productId\": \"{{product_id}}\"\n}"

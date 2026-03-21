@@ -11,12 +11,20 @@ import (
 	"github.com/ken/connect-microservice/gen/product/v1/productv1connect"
 	userv1 "github.com/ken/connect-microservice/gen/user/v1"
 	"github.com/ken/connect-microservice/gen/user/v1/userv1connect"
+	"github.com/ken/connect-microservice/internal/auth"
 	"github.com/ken/connect-microservice/services/order/internal/usecase"
 )
 
 // コンパイル時にインターフェース実装を検証する。
 var _ usecase.UserClient = (*ConnectUserClient)(nil)
 var _ usecase.ProductClient = (*ConnectProductClient)(nil)
+
+// withAuthHeader は ctx に保存されたトークンを発信リクエストの Authorization ヘッダに転送する。
+func withAuthHeader[T any](ctx context.Context, req *connect.Request[T]) {
+	if token, ok := auth.TokenFromContext(ctx); ok {
+		req.Header().Set("Authorization", "Bearer "+token)
+	}
+}
 
 // ConnectUserClient は userv1connect を usecase.UserClient に適合させるアダプター。
 type ConnectUserClient struct {
@@ -30,7 +38,9 @@ func NewConnectUserClient(baseURL string) *ConnectUserClient {
 }
 
 func (c *ConnectUserClient) ValidateUser(ctx context.Context, id string) error {
-	_, err := c.client.GetUser(ctx, connect.NewRequest(&userv1.GetUserRequest{Id: id}))
+	req := connect.NewRequest(&userv1.GetUserRequest{Id: id})
+	withAuthHeader(ctx, req)
+	_, err := c.client.GetUser(ctx, req)
 	if err != nil {
 		return fmt.Errorf("get user: %w", err)
 	}
@@ -49,7 +59,9 @@ func NewConnectProductClient(baseURL string) *ConnectProductClient {
 }
 
 func (c *ConnectProductClient) GetProduct(ctx context.Context, id string) (usecase.ProductInfo, error) {
-	resp, err := c.client.GetProduct(ctx, connect.NewRequest(&productv1.GetProductRequest{Id: id}))
+	req := connect.NewRequest(&productv1.GetProductRequest{Id: id})
+	withAuthHeader(ctx, req)
+	resp, err := c.client.GetProduct(ctx, req)
 	if err != nil {
 		return usecase.ProductInfo{}, fmt.Errorf("get product: %w", err)
 	}
@@ -63,20 +75,24 @@ func (c *ConnectProductClient) GetProduct(ctx context.Context, id string) (useca
 }
 
 func (c *ConnectProductClient) DeductStock(ctx context.Context, productID string, quantity int32) error {
-	_, err := c.client.UpdateStock(ctx, connect.NewRequest(&productv1.UpdateStockRequest{
+	req := connect.NewRequest(&productv1.UpdateStockRequest{
 		ProductId: productID,
 		Delta:     -quantity,
 		Reason:    productv1.StockChangeReason_STOCK_CHANGE_REASON_SALE,
-	}))
+	})
+	withAuthHeader(ctx, req)
+	_, err := c.client.UpdateStock(ctx, req)
 	return err
 }
 
 func (c *ConnectProductClient) RestoreStock(ctx context.Context, productID string, quantity int32, referenceID string) error {
-	_, err := c.client.UpdateStock(ctx, connect.NewRequest(&productv1.UpdateStockRequest{
+	req := connect.NewRequest(&productv1.UpdateStockRequest{
 		ProductId:   productID,
 		Delta:       quantity,
 		Reason:      productv1.StockChangeReason_STOCK_CHANGE_REASON_RETURN,
 		ReferenceId: referenceID,
-	}))
+	})
+	withAuthHeader(ctx, req)
+	_, err := c.client.UpdateStock(ctx, req)
 	return err
 }

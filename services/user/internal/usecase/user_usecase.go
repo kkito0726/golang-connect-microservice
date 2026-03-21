@@ -9,9 +9,13 @@ import (
 	"github.com/ken/connect-microservice/services/user/internal/repository"
 )
 
+// Authenticate はメールとパスワードでユーザーを認証して返す。
+// メール不在・パスワード不一致どちらも同じエラーを返す（タイミング攻撃対策）。
+
 type UserRepository interface {
 	Create(ctx context.Context, u repository.User) (repository.User, error)
 	GetByID(ctx context.Context, id string) (repository.User, error)
+	GetByEmail(ctx context.Context, email string) (repository.User, error)
 	List(ctx context.Context, limit, offset int) ([]repository.User, int, error)
 	Update(ctx context.Context, id, name, email string) (repository.User, error)
 	SoftDelete(ctx context.Context, id string) error
@@ -58,4 +62,16 @@ func (uc *UserUsecase) UpdateUser(ctx context.Context, id, name, email string) (
 
 func (uc *UserUsecase) DeleteUser(ctx context.Context, id string) error {
 	return uc.repo.SoftDelete(ctx, id)
+}
+
+func (uc *UserUsecase) Authenticate(ctx context.Context, email, password string) (repository.User, error) {
+	u, err := uc.repo.GetByEmail(ctx, email)
+	if err != nil {
+		// メール不在でもパスワード不一致と同じエラーを返す
+		return repository.User{}, fmt.Errorf("invalid email or password")
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password)); err != nil {
+		return repository.User{}, fmt.Errorf("invalid email or password")
+	}
+	return u, nil
 }

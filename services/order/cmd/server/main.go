@@ -10,12 +10,15 @@ import (
 	"syscall"
 	"time"
 
+	"connectrpc.com/connect"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 
 	"github.com/ken/connect-microservice/gen/order/v1/orderv1connect"
+	"github.com/ken/connect-microservice/internal/auth"
 	"github.com/ken/connect-microservice/internal/config"
 	"github.com/ken/connect-microservice/internal/db"
+	"github.com/ken/connect-microservice/internal/middleware"
 	"github.com/ken/connect-microservice/services/order/internal/client"
 	"github.com/ken/connect-microservice/services/order/internal/handler"
 	"github.com/ken/connect-microservice/services/order/internal/repository"
@@ -25,7 +28,11 @@ import (
 func main() {
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
 
-	cfg := config.Load()
+	cfg, err := config.Load()
+	if err != nil {
+		slog.Error("failed to load config", "error", err)
+		os.Exit(1)
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -37,6 +44,9 @@ func main() {
 	}
 	defer pool.Close()
 
+	tokenGen := auth.NewTokenGenerator(cfg.JWTSecret, cfg.JWTExpiryHours)
+	authInterceptor := middleware.NewAuthInterceptor(tokenGen, nil)
+
 	repo := repository.NewOrderRepository(pool)
 	productClient := client.NewConnectProductClient(cfg.ProductServiceURL)
 	userClient := client.NewConnectUserClient(cfg.UserServiceURL)
@@ -44,7 +54,7 @@ func main() {
 	h := handler.NewOrderHandler(uc)
 
 	mux := http.NewServeMux()
-	path, svcHandler := orderv1connect.NewOrderServiceHandler(h)
+	path, svcHandler := orderv1connect.NewOrderServiceHandler(h, connect.WithInterceptors(authInterceptor))
 	mux.Handle(path, svcHandler)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)

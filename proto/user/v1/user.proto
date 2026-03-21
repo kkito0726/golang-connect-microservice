@@ -102,10 +102,29 @@ message DeleteUserRequest {
 // DeleteUserResponse is the response message for DeleteUser (empty on success).
 message DeleteUserResponse {}
 
+// LoginRequest is the request message for authenticating a user.
+message LoginRequest {
+  // Email address.
+  string email = 1;
+  // Plain-text password.
+  string password = 2;
+}
+
+// LoginResponse is the response message for Login.
+message LoginResponse {
+  // JWT access token.
+  string access_token = 1;
+  // Unix epoch seconds when the token expires.
+  int64 expires_at = 2;
+}
+
 // UserService manages user registration and profiles.
 //
 // Base URL: http://localhost:8080
 service UserService {
+  // Login authenticates a user and returns a JWT access token.
+  // Returns UNAUTHENTICATED if the email or password is incorrect.
+  rpc Login(LoginRequest) returns (LoginResponse);
   // CreateUser registers a new user.
   // Returns ALREADY_EXISTS if the email is taken.
   rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
