@@ -9,7 +9,7 @@ import (
 
 	productv1 "github.com/ken/connect-microservice/gen/product/v1"
 	"github.com/ken/connect-microservice/gen/product/v1/productv1connect"
-	"github.com/ken/connect-microservice/services/product/internal/repository"
+	"github.com/ken/connect-microservice/services/product/internal/domain"
 	"github.com/ken/connect-microservice/services/product/internal/usecase"
 )
 
@@ -28,7 +28,7 @@ func (h *ProductHandler) CreateProduct(ctx context.Context, req *connect.Request
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("sku and name are required"))
 	}
 
-	p, err := h.uc.CreateProduct(ctx, repository.Product{
+	p, err := h.uc.CreateProduct(ctx, domain.Product{
 		SKU:           req.Msg.Sku,
 		Name:          req.Msg.Name,
 		Description:   req.Msg.Description,
@@ -129,7 +129,7 @@ func (h *ProductHandler) GetStockLevel(ctx context.Context, req *connect.Request
 	}), nil
 }
 
-func toProtoProduct(p repository.Product) *productv1.Product {
+func toProtoProduct(p domain.Product) *productv1.Product {
 	return &productv1.Product{
 		Id:            p.ID,
 		Sku:           p.SKU,
@@ -143,7 +143,7 @@ func toProtoProduct(p repository.Product) *productv1.Product {
 	}
 }
 
-func toProtoStockMovement(m repository.StockMovement) *productv1.StockMovement {
+func toProtoStockMovement(m domain.StockMovement) *productv1.StockMovement {
 	return &productv1.StockMovement{
 		Id:          m.ID,
 		ProductId:   m.ProductID,

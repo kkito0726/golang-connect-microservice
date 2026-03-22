@@ -3,30 +3,12 @@ package repository
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/ken/connect-microservice/services/order/internal/domain"
 )
-
-type Order struct {
-	ID         string
-	UserID     string
-	Status     string
-	TotalCents int64
-	Items      []OrderItem
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
-}
-
-type OrderItem struct {
-	ID             string
-	OrderID        string
-	ProductID      string
-	ProductName    string
-	Quantity       int32
-	UnitPriceCents int64
-}
 
 type OrderRepository struct {
 	pool *pgxpool.Pool
@@ -36,14 +18,16 @@ func NewOrderRepository(pool *pgxpool.Pool) *OrderRepository {
 	return &OrderRepository{pool: pool}
 }
 
-func (r *OrderRepository) Create(ctx context.Context, userID string, items []OrderItem, totalCents int64) (Order, error) {
+var _ domain.OrderRepository = (*OrderRepository)(nil)
+
+func (r *OrderRepository) Create(ctx context.Context, userID string, items []domain.OrderItem, totalCents int64) (domain.Order, error) {
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
-		return Order{}, fmt.Errorf("begin transaction: %w", err)
+		return domain.Order{}, fmt.Errorf("begin transaction: %w", err)
 	}
 	defer tx.Rollback(ctx)
 
-	var order Order
+	var order domain.Order
 	err = tx.QueryRow(ctx,
 		`INSERT INTO orders (user_id, status, total_cents)
 		 VALUES ($1, 'pending', $2)
@@ -51,11 +35,11 @@ func (r *OrderRepository) Create(ctx context.Context, userID string, items []Ord
 		userID, totalCents,
 	).Scan(&order.ID, &order.UserID, &order.Status, &order.TotalCents, &order.CreatedAt, &order.UpdatedAt)
 	if err != nil {
-		return Order{}, fmt.Errorf("insert order: %w", err)
+		return domain.Order{}, fmt.Errorf("insert order: %w", err)
 	}
 
 	for _, item := range items {
-		var oi OrderItem
+		var oi domain.OrderItem
 		err = tx.QueryRow(ctx,
 			`INSERT INTO order_items (order_id, product_id, product_name, quantity, unit_price_cents)
 			 VALUES ($1, $2, $3, $4, $5)
@@ -63,39 +47,39 @@ func (r *OrderRepository) Create(ctx context.Context, userID string, items []Ord
 			order.ID, item.ProductID, item.ProductName, item.Quantity, item.UnitPriceCents,
 		).Scan(&oi.ID, &oi.OrderID, &oi.ProductID, &oi.ProductName, &oi.Quantity, &oi.UnitPriceCents)
 		if err != nil {
-			return Order{}, fmt.Errorf("insert order item: %w", err)
+			return domain.Order{}, fmt.Errorf("insert order item: %w", err)
 		}
 		order.Items = append(order.Items, oi)
 	}
 
 	if err := tx.Commit(ctx); err != nil {
-		return Order{}, fmt.Errorf("commit transaction: %w", err)
+		return domain.Order{}, fmt.Errorf("commit transaction: %w", err)
 	}
 	return order, nil
 }
 
-func (r *OrderRepository) GetByID(ctx context.Context, id string) (Order, error) {
-	var order Order
+func (r *OrderRepository) GetByID(ctx context.Context, id string) (domain.Order, error) {
+	var order domain.Order
 	err := r.pool.QueryRow(ctx,
 		`SELECT id, user_id, status, total_cents, created_at, updated_at
 		 FROM orders WHERE id = $1`, id,
 	).Scan(&order.ID, &order.UserID, &order.Status, &order.TotalCents, &order.CreatedAt, &order.UpdatedAt)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return Order{}, fmt.Errorf("order not found: %s", id)
+			return domain.Order{}, fmt.Errorf("order not found: %s", id)
 		}
-		return Order{}, fmt.Errorf("get order: %w", err)
+		return domain.Order{}, fmt.Errorf("get order: %w", err)
 	}
 
 	items, err := r.getOrderItems(ctx, id)
 	if err != nil {
-		return Order{}, err
+		return domain.Order{}, err
 	}
 	order.Items = items
 	return order, nil
 }
 
-func (r *OrderRepository) getOrderItems(ctx context.Context, orderID string) ([]OrderItem, error) {
+func (r *OrderRepository) getOrderItems(ctx context.Context, orderID string) ([]domain.OrderItem, error) {
 	rows, err := r.pool.Query(ctx,
 		`SELECT id, order_id, product_id, product_name, quantity, unit_price_cents
 		 FROM order_items WHERE order_id = $1`, orderID)
@@ -104,9 +88,9 @@ func (r *OrderRepository) getOrderItems(ctx context.Context, orderID string) ([]
 	}
 	defer rows.Close()
 
-	var items []OrderItem
+	var items []domain.OrderItem
 	for rows.Next() {
-		var item OrderItem
+		var item domain.OrderItem
 		if err := rows.Scan(&item.ID, &item.OrderID, &item.ProductID, &item.ProductName, &item.Quantity, &item.UnitPriceCents); err != nil {
 			return nil, fmt.Errorf("scan order item: %w", err)
 		}
@@ -115,7 +99,7 @@ func (r *OrderRepository) getOrderItems(ctx context.Context, orderID string) ([]
 	return items, nil
 }
 
-func (r *OrderRepository) List(ctx context.Context, userID, status string, limit, offset int) ([]Order, int, error) {
+func (r *OrderRepository) List(ctx context.Context, userID, status string, limit, offset int) ([]domain.Order, int, error) {
 	query := `SELECT id, user_id, status, total_cents, created_at, updated_at FROM orders WHERE 1=1`
 	countQuery := `SELECT COUNT(*) FROM orders WHERE 1=1`
 	args := []any{}
@@ -149,9 +133,9 @@ func (r *OrderRepository) List(ctx context.Context, userID, status string, limit
 	}
 	defer rows.Close()
 
-	var orders []Order
+	var orders []domain.Order
 	for rows.Next() {
-		var o Order
+		var o domain.Order
 		if err := rows.Scan(&o.ID, &o.UserID, &o.Status, &o.TotalCents, &o.CreatedAt, &o.UpdatedAt); err != nil {
 			return nil, 0, fmt.Errorf("scan order: %w", err)
 		}
@@ -165,8 +149,8 @@ func (r *OrderRepository) List(ctx context.Context, userID, status string, limit
 	return orders, total, nil
 }
 
-func (r *OrderRepository) UpdateStatus(ctx context.Context, id, status string) (Order, error) {
-	var order Order
+func (r *OrderRepository) UpdateStatus(ctx context.Context, id, status string) (domain.Order, error) {
+	var order domain.Order
 	err := r.pool.QueryRow(ctx,
 		`UPDATE orders SET status = $1, updated_at = now()
 		 WHERE id = $2
@@ -175,14 +159,14 @@ func (r *OrderRepository) UpdateStatus(ctx context.Context, id, status string) (
 	).Scan(&order.ID, &order.UserID, &order.Status, &order.TotalCents, &order.CreatedAt, &order.UpdatedAt)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return Order{}, fmt.Errorf("order not found: %s", id)
+			return domain.Order{}, fmt.Errorf("order not found: %s", id)
 		}
-		return Order{}, fmt.Errorf("update order status: %w", err)
+		return domain.Order{}, fmt.Errorf("update order status: %w", err)
 	}
 
 	items, err := r.getOrderItems(ctx, id)
 	if err != nil {
-		return Order{}, err
+		return domain.Order{}, err
 	}
 	order.Items = items
 	return order, nil

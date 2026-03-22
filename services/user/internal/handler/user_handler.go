@@ -10,7 +10,7 @@ import (
 	userv1 "github.com/ken/connect-microservice/gen/user/v1"
 	"github.com/ken/connect-microservice/gen/user/v1/userv1connect"
 	"github.com/ken/connect-microservice/internal/auth"
-	"github.com/ken/connect-microservice/services/user/internal/repository"
+	"github.com/ken/connect-microservice/services/user/internal/domain"
 	"github.com/ken/connect-microservice/services/user/internal/usecase"
 )
 
@@ -114,7 +114,7 @@ func (h *UserHandler) DeleteUser(ctx context.Context, req *connect.Request[userv
 	return connect.NewResponse(&userv1.DeleteUserResponse{}), nil
 }
 
-func toProtoUser(u repository.User) *userv1.User {
+func toProtoUser(u domain.User) *userv1.User {
 	role := userv1.Role_ROLE_CUSTOMER
 	if u.Role == "admin" {
 		role = userv1.Role_ROLE_ADMIN

@@ -3,32 +3,12 @@ package repository
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/ken/connect-microservice/services/product/internal/domain"
 )
-
-type Product struct {
-	ID            string
-	SKU           string
-	Name          string
-	Description   string
-	PriceCents    int64
-	StockQuantity int32
-	Category      string
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
-}
-
-type StockMovement struct {
-	ID          string
-	ProductID   string
-	Delta       int32
-	Reason      string
-	ReferenceID string
-	CreatedAt   time.Time
-}
 
 type ProductRepository struct {
 	pool *pgxpool.Pool
@@ -38,8 +18,10 @@ func NewProductRepository(pool *pgxpool.Pool) *ProductRepository {
 	return &ProductRepository{pool: pool}
 }
 
-func (r *ProductRepository) Create(ctx context.Context, p Product) (Product, error) {
-	var result Product
+var _ domain.ProductRepository = (*ProductRepository)(nil)
+
+func (r *ProductRepository) Create(ctx context.Context, p domain.Product) (domain.Product, error) {
+	var result domain.Product
 	err := r.pool.QueryRow(ctx,
 		`INSERT INTO products (sku, name, description, price_cents, stock_quantity, category)
 		 VALUES ($1, $2, $3, $4, $5, $6)
@@ -48,13 +30,13 @@ func (r *ProductRepository) Create(ctx context.Context, p Product) (Product, err
 	).Scan(&result.ID, &result.SKU, &result.Name, &result.Description, &result.PriceCents,
 		&result.StockQuantity, &result.Category, &result.CreatedAt, &result.UpdatedAt)
 	if err != nil {
-		return Product{}, fmt.Errorf("insert product: %w", err)
+		return domain.Product{}, fmt.Errorf("insert product: %w", err)
 	}
 	return result, nil
 }
 
-func (r *ProductRepository) GetByID(ctx context.Context, id string) (Product, error) {
-	var p Product
+func (r *ProductRepository) GetByID(ctx context.Context, id string) (domain.Product, error) {
+	var p domain.Product
 	err := r.pool.QueryRow(ctx,
 		`SELECT id, sku, name, description, price_cents, stock_quantity, category, created_at, updated_at
 		 FROM products WHERE id = $1 AND deleted_at IS NULL`, id,
@@ -62,25 +44,16 @@ func (r *ProductRepository) GetByID(ctx context.Context, id string) (Product, er
 		&p.StockQuantity, &p.Category, &p.CreatedAt, &p.UpdatedAt)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return Product{}, fmt.Errorf("product not found: %s", id)
+			return domain.Product{}, fmt.Errorf("product not found: %s", id)
 		}
-		return Product{}, fmt.Errorf("get product: %w", err)
+		return domain.Product{}, fmt.Errorf("get product: %w", err)
 	}
 	return p, nil
 }
 
-func (r *ProductRepository) List(ctx context.Context, limit, offset int, category string) ([]Product, int, error) {
-	var total int
-	countQuery := `SELECT COUNT(*) FROM products WHERE deleted_at IS NULL`
-	listQuery := `SELECT id, sku, name, description, price_cents, stock_quantity, category, created_at, updated_at
-		FROM products WHERE deleted_at IS NULL`
-
+func (r *ProductRepository) List(ctx context.Context, limit, offset int, category string) ([]domain.Product, int, error) {
 	if category != "" {
-		countQuery += ` AND category = '` + category + `'`
-		listQuery += ` AND category = $3`
-	}
-
-	if category != "" {
+		var total int
 		err := r.pool.QueryRow(ctx, `SELECT COUNT(*) FROM products WHERE deleted_at IS NULL AND category = $1`, category).Scan(&total)
 		if err != nil {
 			return nil, 0, fmt.Errorf("count products: %w", err)
@@ -96,7 +69,8 @@ func (r *ProductRepository) List(ctx context.Context, limit, offset int, categor
 		return scanProducts(rows, total)
 	}
 
-	err := r.pool.QueryRow(ctx, countQuery).Scan(&total)
+	var total int
+	err := r.pool.QueryRow(ctx, `SELECT COUNT(*) FROM products WHERE deleted_at IS NULL`).Scan(&total)
 	if err != nil {
 		return nil, 0, fmt.Errorf("count products: %w", err)
 	}
@@ -111,10 +85,10 @@ func (r *ProductRepository) List(ctx context.Context, limit, offset int, categor
 	return scanProducts(rows, total)
 }
 
-func scanProducts(rows pgx.Rows, total int) ([]Product, int, error) {
-	var products []Product
+func scanProducts(rows pgx.Rows, total int) ([]domain.Product, int, error) {
+	var products []domain.Product
 	for rows.Next() {
-		var p Product
+		var p domain.Product
 		if err := rows.Scan(&p.ID, &p.SKU, &p.Name, &p.Description, &p.PriceCents,
 			&p.StockQuantity, &p.Category, &p.CreatedAt, &p.UpdatedAt); err != nil {
 			return nil, 0, fmt.Errorf("scan product: %w", err)
@@ -124,8 +98,8 @@ func scanProducts(rows pgx.Rows, total int) ([]Product, int, error) {
 	return products, total, nil
 }
 
-func (r *ProductRepository) Update(ctx context.Context, id, name, description, category string, priceCents int64) (Product, error) {
-	var p Product
+func (r *ProductRepository) Update(ctx context.Context, id, name, description, category string, priceCents int64) (domain.Product, error) {
+	var p domain.Product
 	err := r.pool.QueryRow(ctx,
 		`UPDATE products SET name = $1, description = $2, price_cents = $3, category = $4, updated_at = now()
 		 WHERE id = $5 AND deleted_at IS NULL
@@ -135,9 +109,9 @@ func (r *ProductRepository) Update(ctx context.Context, id, name, description, c
 		&p.StockQuantity, &p.Category, &p.CreatedAt, &p.UpdatedAt)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return Product{}, fmt.Errorf("product not found: %s", id)
+			return domain.Product{}, fmt.Errorf("product not found: %s", id)
 		}
-		return Product{}, fmt.Errorf("update product: %w", err)
+		return domain.Product{}, fmt.Errorf("update product: %w", err)
 	}
 	return p, nil
 }
@@ -155,14 +129,14 @@ func (r *ProductRepository) SoftDelete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (r *ProductRepository) UpdateStock(ctx context.Context, productID string, delta int32, reason, referenceID string) (Product, StockMovement, error) {
+func (r *ProductRepository) UpdateStock(ctx context.Context, productID string, delta int32, reason, referenceID string) (domain.Product, domain.StockMovement, error) {
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
-		return Product{}, StockMovement{}, fmt.Errorf("begin transaction: %w", err)
+		return domain.Product{}, domain.StockMovement{}, fmt.Errorf("begin transaction: %w", err)
 	}
 	defer tx.Rollback(ctx)
 
-	var p Product
+	var p domain.Product
 	err = tx.QueryRow(ctx,
 		`SELECT id, sku, name, description, price_cents, stock_quantity, category, created_at, updated_at
 		 FROM products WHERE id = $1 AND deleted_at IS NULL FOR UPDATE`, productID,
@@ -170,14 +144,14 @@ func (r *ProductRepository) UpdateStock(ctx context.Context, productID string, d
 		&p.StockQuantity, &p.Category, &p.CreatedAt, &p.UpdatedAt)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return Product{}, StockMovement{}, fmt.Errorf("product not found: %s", productID)
+			return domain.Product{}, domain.StockMovement{}, fmt.Errorf("product not found: %s", productID)
 		}
-		return Product{}, StockMovement{}, fmt.Errorf("lock product: %w", err)
+		return domain.Product{}, domain.StockMovement{}, fmt.Errorf("lock product: %w", err)
 	}
 
 	newQuantity := p.StockQuantity + delta
 	if newQuantity < 0 {
-		return Product{}, StockMovement{}, fmt.Errorf("insufficient stock: have %d, need %d", p.StockQuantity, -delta)
+		return domain.Product{}, domain.StockMovement{}, fmt.Errorf("insufficient stock: have %d, need %d", p.StockQuantity, -delta)
 	}
 
 	err = tx.QueryRow(ctx,
@@ -188,14 +162,14 @@ func (r *ProductRepository) UpdateStock(ctx context.Context, productID string, d
 	).Scan(&p.ID, &p.SKU, &p.Name, &p.Description, &p.PriceCents,
 		&p.StockQuantity, &p.Category, &p.CreatedAt, &p.UpdatedAt)
 	if err != nil {
-		return Product{}, StockMovement{}, fmt.Errorf("update stock: %w", err)
+		return domain.Product{}, domain.StockMovement{}, fmt.Errorf("update stock: %w", err)
 	}
 
 	var refID *string
 	if referenceID != "" {
 		refID = &referenceID
 	}
-	var mv StockMovement
+	var mv domain.StockMovement
 	err = tx.QueryRow(ctx,
 		`INSERT INTO stock_movements (product_id, delta, reason, reference_id)
 		 VALUES ($1, $2, $3, $4)
@@ -203,16 +177,16 @@ func (r *ProductRepository) UpdateStock(ctx context.Context, productID string, d
 		productID, delta, reason, refID,
 	).Scan(&mv.ID, &mv.ProductID, &mv.Delta, &mv.Reason, &mv.ReferenceID, &mv.CreatedAt)
 	if err != nil {
-		return Product{}, StockMovement{}, fmt.Errorf("insert stock movement: %w", err)
+		return domain.Product{}, domain.StockMovement{}, fmt.Errorf("insert stock movement: %w", err)
 	}
 
 	if err := tx.Commit(ctx); err != nil {
-		return Product{}, StockMovement{}, fmt.Errorf("commit transaction: %w", err)
+		return domain.Product{}, domain.StockMovement{}, fmt.Errorf("commit transaction: %w", err)
 	}
 	return p, mv, nil
 }
 
-func (r *ProductRepository) GetStockMovements(ctx context.Context, productID string, limit int) ([]StockMovement, error) {
+func (r *ProductRepository) GetStockMovements(ctx context.Context, productID string, limit int) ([]domain.StockMovement, error) {
 	rows, err := r.pool.Query(ctx,
 		`SELECT id, product_id, delta, reason, COALESCE(reference_id::text, ''), created_at
 		 FROM stock_movements WHERE product_id = $1
@@ -222,9 +196,9 @@ func (r *ProductRepository) GetStockMovements(ctx context.Context, productID str
 	}
 	defer rows.Close()
 
-	var movements []StockMovement
+	var movements []domain.StockMovement
 	for rows.Next() {
-		var m StockMovement
+		var m domain.StockMovement
 		if err := rows.Scan(&m.ID, &m.ProductID, &m.Delta, &m.Reason, &m.ReferenceID, &m.CreatedAt); err != nil {
 			return nil, fmt.Errorf("scan stock movement: %w", err)
 		}
