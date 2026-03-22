@@ -38,6 +38,8 @@ services:
     environment:
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/user_db?sslmode=disable
       PORT: "8080"
+      JWT_SECRET: "dev-secret-key-change-this-in-production-32ch"
+      JWT_EXPIRY_HOURS: "24"
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -52,6 +54,8 @@ services:
     environment:
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/product_db?sslmode=disable
       PORT: "8080"
+      JWT_SECRET: "dev-secret-key-change-this-in-production-32ch"
+      JWT_EXPIRY_HOURS: "24"
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -68,6 +72,8 @@ services:
       PORT: "8080"
       PRODUCT_SERVICE_URL: http://product-service:8080
       USER_SERVICE_URL: http://user-service:8080
+      JWT_SECRET: "dev-secret-key-change-this-in-production-32ch"
+      JWT_EXPIRY_HOURS: "24"
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -83,6 +89,8 @@ services:
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/payment_db?sslmode=disable
       PORT: "8080"
       ORDER_SERVICE_URL: http://order-service:8080
+      JWT_SECRET: "dev-secret-key-change-this-in-production-32ch"
+      JWT_EXPIRY_HOURS: "24"
     depends_on:
       migrate:
         condition: service_completed_successfully

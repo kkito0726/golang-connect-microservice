@@ -9,11 +9,19 @@ import (
 
 	orderv1 "github.com/ken/connect-microservice/gen/order/v1"
 	"github.com/ken/connect-microservice/gen/order/v1/orderv1connect"
+	"github.com/ken/connect-microservice/internal/auth"
 	"github.com/ken/connect-microservice/services/payment/internal/usecase"
 )
 
 // コンパイル時にインターフェース実装を検証する。
 var _ usecase.OrderClient = (*ConnectOrderClient)(nil)
+
+// withAuthHeader は ctx に保存されたトークンを発信リクエストの Authorization ヘッダに転送する。
+func withAuthHeader[T any](ctx context.Context, req *connect.Request[T]) {
+	if token, ok := auth.TokenFromContext(ctx); ok {
+		req.Header().Set("Authorization", "Bearer "+token)
+	}
+}
 
 // ConnectOrderClient は orderv1connect を usecase.OrderClient に適合させるアダプター。
 type ConnectOrderClient struct {
@@ -27,7 +35,9 @@ func NewConnectOrderClient(baseURL string) *ConnectOrderClient {
 }
 
 func (c *ConnectOrderClient) GetOrder(ctx context.Context, id string) (usecase.OrderInfo, error) {
-	resp, err := c.client.GetOrder(ctx, connect.NewRequest(&orderv1.GetOrderRequest{Id: id}))
+	req := connect.NewRequest(&orderv1.GetOrderRequest{Id: id})
+	withAuthHeader(ctx, req)
+	resp, err := c.client.GetOrder(ctx, req)
 	if err != nil {
 		return usecase.OrderInfo{}, fmt.Errorf("get order: %w", err)
 	}
@@ -40,15 +50,19 @@ func (c *ConnectOrderClient) GetOrder(ctx context.Context, id string) (usecase.O
 }
 
 func (c *ConnectOrderClient) UpdateOrderStatus(ctx context.Context, id, status string) error {
-	_, err := c.client.UpdateOrderStatus(ctx, connect.NewRequest(&orderv1.UpdateOrderStatusRequest{
+	req := connect.NewRequest(&orderv1.UpdateOrderStatusRequest{
 		Id:     id,
 		Status: stringToOrderStatus(status),
-	}))
+	})
+	withAuthHeader(ctx, req)
+	_, err := c.client.UpdateOrderStatus(ctx, req)
 	return err
 }
 
 func (c *ConnectOrderClient) CancelOrder(ctx context.Context, id string) error {
-	_, err := c.client.CancelOrder(ctx, connect.NewRequest(&orderv1.CancelOrderRequest{Id: id}))
+	req := connect.NewRequest(&orderv1.CancelOrderRequest{Id: id})
+	withAuthHeader(ctx, req)
+	_, err := c.client.CancelOrder(ctx, req)
 	return err
 }
 

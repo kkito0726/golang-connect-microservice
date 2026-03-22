@@ -9,18 +9,41 @@ import (
 
 	userv1 "github.com/ken/connect-microservice/gen/user/v1"
 	"github.com/ken/connect-microservice/gen/user/v1/userv1connect"
+	"github.com/ken/connect-microservice/internal/auth"
 	"github.com/ken/connect-microservice/services/user/internal/repository"
 	"github.com/ken/connect-microservice/services/user/internal/usecase"
 )
 
 type UserHandler struct {
-	uc *usecase.UserUsecase
+	uc       *usecase.UserUsecase
+	tokenGen *auth.TokenGenerator
 }
 
 var _ userv1connect.UserServiceHandler = (*UserHandler)(nil)
 
-func NewUserHandler(uc *usecase.UserUsecase) *UserHandler {
-	return &UserHandler{uc: uc}
+func NewUserHandler(uc *usecase.UserUsecase, tokenGen *auth.TokenGenerator) *UserHandler {
+	return &UserHandler{uc: uc, tokenGen: tokenGen}
+}
+
+func (h *UserHandler) Login(ctx context.Context, req *connect.Request[userv1.LoginRequest]) (*connect.Response[userv1.LoginResponse], error) {
+	if req.Msg.Email == "" || req.Msg.Password == "" {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("email and password are required"))
+	}
+
+	u, err := h.uc.Authenticate(ctx, req.Msg.Email, req.Msg.Password)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeUnauthenticated, err)
+	}
+
+	token, expiresAt, err := h.tokenGen.GenerateToken(u.ID, u.Role)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("generate token: %w", err))
+	}
+
+	return connect.NewResponse(&userv1.LoginResponse{
+		AccessToken: token,
+		ExpiresAt:   expiresAt.Unix(),
+	}), nil
 }
 
 func (h *UserHandler) CreateUser(ctx context.Context, req *connect.Request[userv1.CreateUserRequest]) (*connect.Response[userv1.CreateUserResponse], error) {

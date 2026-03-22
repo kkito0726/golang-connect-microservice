@@ -217,7 +217,15 @@
                 <li>
                   <a href="#user.v1.UpdateUserResponse"><span class="badge">M</span>UpdateUserResponse</a>
                 </li>
-              
+
+                <li>
+                  <a href="#user.v1.LoginRequest"><span class="badge">M</span>LoginRequest</a>
+                </li>
+
+                <li>
+                  <a href="#user.v1.LoginResponse"><span class="badge">M</span>LoginResponse</a>
+                </li>
+
                 <li>
                   <a href="#user.v1.User"><span class="badge">M</span>User</a>
                 </li>
@@ -732,7 +740,69 @@
           
 
         
-      
+
+        <h3 id="user.v1.LoginRequest">LoginRequest</h3>
+        <p>LoginRequest is the request message for authenticating a user.</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>email</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Email address of the user. </p></td>
+                </tr>
+
+                <tr>
+                  <td>password</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Plain-text password (verified against bcrypt hash). </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
+        <h3 id="user.v1.LoginResponse">LoginResponse</h3>
+        <p>LoginResponse is the response message for Login.</p>
+
+
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                  <td>access_token</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>JWT access token (HS256). Include in subsequent requests as: Authorization: Bearer &lt;token&gt; </p></td>
+                </tr>
+
+                <tr>
+                  <td>user</td>
+                  <td><a href="#user.v1.User">User</a></td>
+                  <td></td>
+                  <td><p>The authenticated user. </p></td>
+                </tr>
+
+            </tbody>
+          </table>
+
+
+
+
+
         <h3 id="user.v1.User">User</h3>
         <p>User represents a registered user in the inventory management system.</p>
 
@@ -828,21 +898,32 @@
 
       
         <h3 id="user.v1.UserService">UserService</h3>
-        <p>UserService manages user registration and profiles.</p><p>Base URL: http://localhost:8080</p>
+        <p>UserService manages user registration and profiles.</p><p>Base URL: http://localhost:8080</p><p><strong>Authentication:</strong> All RPCs except <code>Login</code> and <code>CreateUser</code> require a JWT token in the <code>Authorization: Bearer &lt;token&gt;</code> header. Obtain a token via the <code>Login</code> RPC.</p>
         <table class="enum-table">
           <thead>
             <tr><td>Method Name</td><td>Request Type</td><td>Response Type</td><td>Description</td></tr>
           </thead>
           <tbody>
-            
+
+              <tr>
+                <td>Login</td>
+                <td><a href="#user.v1.LoginRequest">LoginRequest</a></td>
+                <td><a href="#user.v1.LoginResponse">LoginResponse</a></td>
+                <td><p>Login authenticates a user with email and password.
+Returns a JWT access token on success.
+Returns UNAUTHENTICATED if credentials are invalid.
+<strong>Public endpoint — no Authorization header required.</strong></p></td>
+              </tr>
+
               <tr>
                 <td>CreateUser</td>
                 <td><a href="#user.v1.CreateUserRequest">CreateUserRequest</a></td>
                 <td><a href="#user.v1.CreateUserResponse">CreateUserResponse</a></td>
                 <td><p>CreateUser registers a new user.
-Returns ALREADY_EXISTS if the email is taken.</p></td>
+Returns ALREADY_EXISTS if the email is taken.
+<strong>Public endpoint — no Authorization header required.</strong></p></td>
               </tr>
-            
+
               <tr>
                 <td>GetUser</td>
                 <td><a href="#user.v1.GetUserRequest">GetUserRequest</a></td>
@@ -1518,7 +1599,7 @@ Returns NOT_FOUND if the user does not exist.</p></td>
 
       
         <h3 id="product.v1.ProductService">ProductService</h3>
-        <p>ProductService manages the product catalog and inventory.</p><p>Base URL: http://localhost:8081</p>
+        <p>ProductService manages the product catalog and inventory.</p><p>Base URL: http://localhost:8081</p><p><strong>Authentication:</strong> All RPCs require a JWT token in the <code>Authorization: Bearer &lt;token&gt;</code> header.</p>
         <table class="enum-table">
           <thead>
             <tr><td>Method Name</td><td>Request Type</td><td>Response Type</td><td>Description</td></tr>
@@ -2076,7 +2157,7 @@ Returns FAILED_PRECONDITION if stock would go negative.</p></td>
 
       
         <h3 id="order.v1.OrderService">OrderService</h3>
-        <p>OrderService manages customer orders.</p><p>Communicates with user-service and product-service via Connect RPC.</p><p>Base URL: http://localhost:8082</p>
+        <p>OrderService manages customer orders.</p><p>Communicates with user-service and product-service via Connect RPC.</p><p>Base URL: http://localhost:8082</p><p><strong>Authentication:</strong> All RPCs require a JWT token in the <code>Authorization: Bearer &lt;token&gt;</code> header. The token is forwarded to upstream services (user-service, product-service) automatically.</p>
         <table class="enum-table">
           <thead>
             <tr><td>Method Name</td><td>Request Type</td><td>Response Type</td><td>Description</td></tr>
@@ -2524,7 +2605,7 @@ Returns FAILED_PRECONDITION if the order is not in PENDING status.</p></td>
 
       
         <h3 id="payment.v1.PaymentService">PaymentService</h3>
-        <p>PaymentService processes payments and refunds.</p><p>Communicates with order-service via Connect RPC.</p><p>Payment processing is simulated (always succeeds) for learning purposes.</p><p>Base URL: http://localhost:8083</p>
+        <p>PaymentService processes payments and refunds.</p><p>Communicates with order-service via Connect RPC.</p><p>Payment processing is simulated (always succeeds) for learning purposes.</p><p>Base URL: http://localhost:8083</p><p><strong>Authentication:</strong> All RPCs require a JWT token in the <code>Authorization: Bearer &lt;token&gt;</code> header. The token is forwarded to order-service automatically.</p>
         <table class="enum-table">
           <thead>
             <tr><td>Method Name</td><td>Request Type</td><td>Response Type</td><td>Description</td></tr>

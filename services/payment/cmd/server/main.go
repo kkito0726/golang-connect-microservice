@@ -10,12 +10,15 @@ import (
 	"syscall"
 	"time"
 
+	"connectrpc.com/connect"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 
 	"github.com/ken/connect-microservice/gen/payment/v1/paymentv1connect"
+	"github.com/ken/connect-microservice/internal/auth"
 	"github.com/ken/connect-microservice/internal/config"
 	"github.com/ken/connect-microservice/internal/db"
+	"github.com/ken/connect-microservice/internal/middleware"
 	"github.com/ken/connect-microservice/services/payment/internal/client"
 	"github.com/ken/connect-microservice/services/payment/internal/handler"
 	"github.com/ken/connect-microservice/services/payment/internal/repository"
@@ -25,7 +28,11 @@ import (
 func main() {
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
 
-	cfg := config.Load()
+	cfg, err := config.Load()
+	if err != nil {
+		slog.Error("failed to load config", "error", err)
+		os.Exit(1)
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -37,13 +44,16 @@ func main() {
 	}
 	defer pool.Close()
 
+	tokenGen := auth.NewTokenGenerator(cfg.JWTSecret, cfg.JWTExpiryHours)
+	authInterceptor := middleware.NewAuthInterceptor(tokenGen, nil)
+
 	repo := repository.NewPaymentRepository(pool)
 	orderClient := client.NewConnectOrderClient(cfg.OrderServiceURL)
 	uc := usecase.NewPaymentUsecase(repo, orderClient)
 	h := handler.NewPaymentHandler(uc)
 
 	mux := http.NewServeMux()
-	path, svcHandler := paymentv1connect.NewPaymentServiceHandler(h)
+	path, svcHandler := paymentv1connect.NewPaymentServiceHandler(h, connect.WithInterceptors(authInterceptor))
 	mux.Handle(path, svcHandler)
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)

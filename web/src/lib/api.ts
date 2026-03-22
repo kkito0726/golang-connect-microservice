@@ -1,3 +1,5 @@
+import { getToken } from "@/lib/auth";
+
 const ENDPOINTS = {
   user: "/api/user",
   product: "/api/product",
@@ -12,9 +14,12 @@ async function rpc<T>(
   body: Record<string, unknown> = {}
 ): Promise<T> {
   const url = `${ENDPOINTS[service]}/${servicePath}/${method}`;
+  const token = getToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
   const res = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify(body),
   });
   if (!res.ok) {
@@ -26,6 +31,8 @@ async function rpc<T>(
 
 // User Service
 export const userApi = {
+  login: (data: { email: string; password: string }) =>
+    rpc<LoginResponse>("user", "user.v1.UserService", "Login", data),
   create: (data: { email: string; name: string; password: string; role: string }) =>
     rpc<{ user: User }>("user", "user.v1.UserService", "CreateUser", data),
   get: (id: string) =>
@@ -91,6 +98,11 @@ export const paymentApi = {
 };
 
 // Types
+export interface LoginResponse {
+  accessToken: string;
+  user: User;
+}
+
 export interface User {
   id: string;
   email: string;

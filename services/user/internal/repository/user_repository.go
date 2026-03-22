@@ -101,6 +101,21 @@ func (r *UserRepository) Update(ctx context.Context, id, name, email string) (Us
 	return u, nil
 }
 
+func (r *UserRepository) GetByEmail(ctx context.Context, email string) (User, error) {
+	var u User
+	err := r.pool.QueryRow(ctx,
+		`SELECT id, email, name, role, password_hash, created_at, updated_at
+		 FROM users WHERE email = $1 AND deleted_at IS NULL`, email,
+	).Scan(&u.ID, &u.Email, &u.Name, &u.Role, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return User{}, fmt.Errorf("user not found")
+		}
+		return User{}, fmt.Errorf("get user by email: %w", err)
+	}
+	return u, nil
+}
+
 func (r *UserRepository) SoftDelete(ctx context.Context, id string) error {
 	tag, err := r.pool.Exec(ctx,
 		`UPDATE users SET deleted_at = now(), updated_at = now()

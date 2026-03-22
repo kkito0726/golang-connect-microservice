@@ -11,7 +11,7 @@ const NAV = [
   { href: "/users", label: "Users", icon: UsersIcon },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ onLogout }: { onLogout?: () => void }) {
   const pathname = usePathname();
 
   return (
@@ -50,11 +50,20 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div className="px-4 py-3 border-t border-border">
+      <div className="px-4 py-3 border-t border-border space-y-2">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
           <span className="text-[11px] text-text-muted font-mono">4 services online</span>
         </div>
+        {onLogout && (
+          <button
+            onClick={onLogout}
+            className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-[12px] text-text-muted hover:text-text-primary hover:bg-surface-2 transition"
+          >
+            <LogoutIcon size={13} />
+            Sign out
+          </button>
+        )}
       </div>
     </aside>
   );
@@ -99,6 +108,16 @@ function UsersIcon({ size = 16 }: { size?: number }) {
     <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
       <circle cx="6" cy="5" r="2.5" /><path d="M1.5 14c0-3 2-4.5 4.5-4.5s4.5 1.5 4.5 4.5" />
       <circle cx="11" cy="5.5" r="2" /><path d="M12 9.5c1.5.5 2.5 1.5 2.5 3.5" />
+    </svg>
+  );
+}
+
+function LogoutIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3" />
+      <path d="M10 11l3-3-3-3" />
+      <path d="M13 8H6" />
     </svg>
   );
 }

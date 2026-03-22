@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Sidebar from "@/components/sidebar";
+import AuthWrapper from "@/components/auth-wrapper";
 
 export const metadata: Metadata = {
   title: "Inventory Management",
@@ -19,10 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="antialiased">
-        <Sidebar />
-        <main className="ml-56 min-h-screen">
-          <div className="px-8 py-6">{children}</div>
-        </main>
+        <AuthWrapper>{children}</AuthWrapper>
       </body>
     </html>
   );
