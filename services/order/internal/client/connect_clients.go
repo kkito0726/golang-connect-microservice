@@ -12,12 +12,12 @@ import (
 	userv1 "github.com/ken/connect-microservice/gen/user/v1"
 	"github.com/ken/connect-microservice/gen/user/v1/userv1connect"
 	"github.com/ken/connect-microservice/internal/auth"
-	"github.com/ken/connect-microservice/services/order/internal/usecase"
+	"github.com/ken/connect-microservice/services/order/internal/domain"
 )
 
 // コンパイル時にインターフェース実装を検証する。
-var _ usecase.UserClient = (*ConnectUserClient)(nil)
-var _ usecase.ProductClient = (*ConnectProductClient)(nil)
+var _ domain.UserClient = (*ConnectUserClient)(nil)
+var _ domain.ProductClient = (*ConnectProductClient)(nil)
 
 // withAuthHeader は ctx に保存されたトークンを発信リクエストの Authorization ヘッダに転送する。
 func withAuthHeader[T any](ctx context.Context, req *connect.Request[T]) {
@@ -26,7 +26,7 @@ func withAuthHeader[T any](ctx context.Context, req *connect.Request[T]) {
 	}
 }
 
-// ConnectUserClient は userv1connect を usecase.UserClient に適合させるアダプター。
+// ConnectUserClient は userv1connect を domain.UserClient に適合させるアダプター。
 type ConnectUserClient struct {
 	client userv1connect.UserServiceClient
 }
@@ -47,7 +47,7 @@ func (c *ConnectUserClient) ValidateUser(ctx context.Context, id string) error {
 	return nil
 }
 
-// ConnectProductClient は productv1connect を usecase.ProductClient に適合させるアダプター。
+// ConnectProductClient は productv1connect を domain.ProductClient に適合させるアダプター。
 type ConnectProductClient struct {
 	client productv1connect.ProductServiceClient
 }
@@ -58,15 +58,15 @@ func NewConnectProductClient(baseURL string) *ConnectProductClient {
 	}
 }
 
-func (c *ConnectProductClient) GetProduct(ctx context.Context, id string) (usecase.ProductInfo, error) {
+func (c *ConnectProductClient) GetProduct(ctx context.Context, id string) (domain.ProductInfo, error) {
 	req := connect.NewRequest(&productv1.GetProductRequest{Id: id})
 	withAuthHeader(ctx, req)
 	resp, err := c.client.GetProduct(ctx, req)
 	if err != nil {
-		return usecase.ProductInfo{}, fmt.Errorf("get product: %w", err)
+		return domain.ProductInfo{}, fmt.Errorf("get product: %w", err)
 	}
 	p := resp.Msg.Product
-	return usecase.ProductInfo{
+	return domain.ProductInfo{
 		ID:            p.Id,
 		Name:          p.Name,
 		PriceCents:    p.PriceCents,

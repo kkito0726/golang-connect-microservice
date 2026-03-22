@@ -3,22 +3,12 @@ package repository
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-)
 
-type Payment struct {
-	ID          string
-	OrderID     string
-	UserID      string
-	AmountCents int64
-	Status      string
-	Method      string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-}
+	"github.com/ken/connect-microservice/services/payment/internal/domain"
+)
 
 type PaymentRepository struct {
 	pool *pgxpool.Pool
@@ -28,8 +18,10 @@ func NewPaymentRepository(pool *pgxpool.Pool) *PaymentRepository {
 	return &PaymentRepository{pool: pool}
 }
 
-func (r *PaymentRepository) Create(ctx context.Context, p Payment) (Payment, error) {
-	var result Payment
+var _ domain.PaymentRepository = (*PaymentRepository)(nil)
+
+func (r *PaymentRepository) Create(ctx context.Context, p domain.Payment) (domain.Payment, error) {
+	var result domain.Payment
 	err := r.pool.QueryRow(ctx,
 		`INSERT INTO payments (order_id, user_id, amount_cents, status, method)
 		 VALUES ($1, $2, $3, $4, $5)
@@ -38,27 +30,27 @@ func (r *PaymentRepository) Create(ctx context.Context, p Payment) (Payment, err
 	).Scan(&result.ID, &result.OrderID, &result.UserID, &result.AmountCents,
 		&result.Status, &result.Method, &result.CreatedAt, &result.UpdatedAt)
 	if err != nil {
-		return Payment{}, fmt.Errorf("insert payment: %w", err)
+		return domain.Payment{}, fmt.Errorf("insert payment: %w", err)
 	}
 	return result, nil
 }
 
-func (r *PaymentRepository) GetByID(ctx context.Context, id string) (Payment, error) {
-	var p Payment
+func (r *PaymentRepository) GetByID(ctx context.Context, id string) (domain.Payment, error) {
+	var p domain.Payment
 	err := r.pool.QueryRow(ctx,
 		`SELECT id, order_id, user_id, amount_cents, status, method, created_at, updated_at
 		 FROM payments WHERE id = $1`, id,
 	).Scan(&p.ID, &p.OrderID, &p.UserID, &p.AmountCents, &p.Status, &p.Method, &p.CreatedAt, &p.UpdatedAt)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return Payment{}, fmt.Errorf("payment not found: %s", id)
+			return domain.Payment{}, fmt.Errorf("payment not found: %s", id)
 		}
-		return Payment{}, fmt.Errorf("get payment: %w", err)
+		return domain.Payment{}, fmt.Errorf("get payment: %w", err)
 	}
 	return p, nil
 }
 
-func (r *PaymentRepository) List(ctx context.Context, orderID, userID string, limit, offset int) ([]Payment, int, error) {
+func (r *PaymentRepository) List(ctx context.Context, orderID, userID string, limit, offset int) ([]domain.Payment, int, error) {
 	query := `SELECT id, order_id, user_id, amount_cents, status, method, created_at, updated_at FROM payments WHERE 1=1`
 	countQuery := `SELECT COUNT(*) FROM payments WHERE 1=1`
 	args := []any{}
@@ -92,9 +84,9 @@ func (r *PaymentRepository) List(ctx context.Context, orderID, userID string, li
 	}
 	defer rows.Close()
 
-	var payments []Payment
+	var payments []domain.Payment
 	for rows.Next() {
-		var p Payment
+		var p domain.Payment
 		if err := rows.Scan(&p.ID, &p.OrderID, &p.UserID, &p.AmountCents, &p.Status, &p.Method, &p.CreatedAt, &p.UpdatedAt); err != nil {
 			return nil, 0, fmt.Errorf("scan payment: %w", err)
 		}
@@ -103,8 +95,8 @@ func (r *PaymentRepository) List(ctx context.Context, orderID, userID string, li
 	return payments, total, nil
 }
 
-func (r *PaymentRepository) UpdateStatus(ctx context.Context, id, status string) (Payment, error) {
-	var p Payment
+func (r *PaymentRepository) UpdateStatus(ctx context.Context, id, status string) (domain.Payment, error) {
+	var p domain.Payment
 	err := r.pool.QueryRow(ctx,
 		`UPDATE payments SET status = $1, updated_at = now()
 		 WHERE id = $2
@@ -113,9 +105,9 @@ func (r *PaymentRepository) UpdateStatus(ctx context.Context, id, status string)
 	).Scan(&p.ID, &p.OrderID, &p.UserID, &p.AmountCents, &p.Status, &p.Method, &p.CreatedAt, &p.UpdatedAt)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return Payment{}, fmt.Errorf("payment not found: %s", id)
+			return domain.Payment{}, fmt.Errorf("payment not found: %s", id)
 		}
-		return Payment{}, fmt.Errorf("update payment status: %w", err)
+		return domain.Payment{}, fmt.Errorf("update payment status: %w", err)
 	}
 	return p, nil
 }

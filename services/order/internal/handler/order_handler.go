@@ -9,7 +9,7 @@ import (
 
 	orderv1 "github.com/ken/connect-microservice/gen/order/v1"
 	"github.com/ken/connect-microservice/gen/order/v1/orderv1connect"
-	"github.com/ken/connect-microservice/services/order/internal/repository"
+	"github.com/ken/connect-microservice/services/order/internal/domain"
 	"github.com/ken/connect-microservice/services/order/internal/usecase"
 )
 
@@ -28,15 +28,15 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, req *connect.Request[ord
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("user_id and items are required"))
 	}
 
-	items := make([]usecase.CreateOrderItem, len(req.Msg.Items))
+	items := make([]domain.CreateOrderItem, len(req.Msg.Items))
 	for i, item := range req.Msg.Items {
-		items[i] = usecase.CreateOrderItem{
+		items[i] = domain.CreateOrderItem{
 			ProductID: item.ProductId,
 			Quantity:  item.Quantity,
 		}
 	}
 
-	order, err := h.uc.CreateOrder(ctx, usecase.CreateOrderInput{
+	order, err := h.uc.CreateOrder(ctx, domain.CreateOrderInput{
 		UserID: req.Msg.UserId,
 		Items:  items,
 	})
@@ -103,7 +103,7 @@ func (h *OrderHandler) CancelOrder(ctx context.Context, req *connect.Request[ord
 	return connect.NewResponse(&orderv1.CancelOrderResponse{Order: toProtoOrder(order)}), nil
 }
 
-func toProtoOrder(o repository.Order) *orderv1.Order {
+func toProtoOrder(o domain.Order) *orderv1.Order {
 	items := make([]*orderv1.OrderItem, len(o.Items))
 	for i, item := range o.Items {
 		items[i] = &orderv1.OrderItem{

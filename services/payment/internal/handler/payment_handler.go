@@ -9,7 +9,7 @@ import (
 
 	paymentv1 "github.com/ken/connect-microservice/gen/payment/v1"
 	"github.com/ken/connect-microservice/gen/payment/v1/paymentv1connect"
-	"github.com/ken/connect-microservice/services/payment/internal/repository"
+	"github.com/ken/connect-microservice/services/payment/internal/domain"
 	"github.com/ken/connect-microservice/services/payment/internal/usecase"
 )
 
@@ -78,7 +78,7 @@ func (h *PaymentHandler) RefundPayment(ctx context.Context, req *connect.Request
 	return connect.NewResponse(&paymentv1.RefundPaymentResponse{Payment: toProtoPayment(payment)}), nil
 }
 
-func toProtoPayment(p repository.Payment) *paymentv1.Payment {
+func toProtoPayment(p domain.Payment) *paymentv1.Payment {
 	return &paymentv1.Payment{
 		Id:          p.ID,
 		OrderId:     p.OrderID,

@@ -3,21 +3,12 @@ package repository
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-)
 
-type User struct {
-	ID           string
-	Email        string
-	Name         string
-	Role         string
-	PasswordHash string
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
-}
+	"github.com/ken/connect-microservice/services/user/internal/domain"
+)
 
 type UserRepository struct {
 	pool *pgxpool.Pool
@@ -27,8 +18,10 @@ func NewUserRepository(pool *pgxpool.Pool) *UserRepository {
 	return &UserRepository{pool: pool}
 }
 
-func (r *UserRepository) Create(ctx context.Context, u User) (User, error) {
-	var result User
+var _ domain.UserRepository = (*UserRepository)(nil)
+
+func (r *UserRepository) Create(ctx context.Context, u domain.User) (domain.User, error) {
+	var result domain.User
 	err := r.pool.QueryRow(ctx,
 		`INSERT INTO users (email, name, role, password_hash)
 		 VALUES ($1, $2, $3, $4)
@@ -36,27 +29,27 @@ func (r *UserRepository) Create(ctx context.Context, u User) (User, error) {
 		u.Email, u.Name, u.Role, u.PasswordHash,
 	).Scan(&result.ID, &result.Email, &result.Name, &result.Role, &result.PasswordHash, &result.CreatedAt, &result.UpdatedAt)
 	if err != nil {
-		return User{}, fmt.Errorf("insert user: %w", err)
+		return domain.User{}, fmt.Errorf("insert user: %w", err)
 	}
 	return result, nil
 }
 
-func (r *UserRepository) GetByID(ctx context.Context, id string) (User, error) {
-	var u User
+func (r *UserRepository) GetByID(ctx context.Context, id string) (domain.User, error) {
+	var u domain.User
 	err := r.pool.QueryRow(ctx,
 		`SELECT id, email, name, role, password_hash, created_at, updated_at
 		 FROM users WHERE id = $1 AND deleted_at IS NULL`, id,
 	).Scan(&u.ID, &u.Email, &u.Name, &u.Role, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return User{}, fmt.Errorf("user not found: %s", id)
+			return domain.User{}, fmt.Errorf("user not found: %s", id)
 		}
-		return User{}, fmt.Errorf("get user: %w", err)
+		return domain.User{}, fmt.Errorf("get user: %w", err)
 	}
 	return u, nil
 }
 
-func (r *UserRepository) List(ctx context.Context, limit, offset int) ([]User, int, error) {
+func (r *UserRepository) List(ctx context.Context, limit, offset int) ([]domain.User, int, error) {
 	var total int
 	err := r.pool.QueryRow(ctx, `SELECT COUNT(*) FROM users WHERE deleted_at IS NULL`).Scan(&total)
 	if err != nil {
@@ -73,9 +66,9 @@ func (r *UserRepository) List(ctx context.Context, limit, offset int) ([]User, i
 	}
 	defer rows.Close()
 
-	var users []User
+	var users []domain.User
 	for rows.Next() {
-		var u User
+		var u domain.User
 		if err := rows.Scan(&u.ID, &u.Email, &u.Name, &u.Role, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt); err != nil {
 			return nil, 0, fmt.Errorf("scan user: %w", err)
 		}
@@ -84,8 +77,8 @@ func (r *UserRepository) List(ctx context.Context, limit, offset int) ([]User, i
 	return users, total, nil
 }
 
-func (r *UserRepository) Update(ctx context.Context, id, name, email string) (User, error) {
-	var u User
+func (r *UserRepository) Update(ctx context.Context, id, name, email string) (domain.User, error) {
+	var u domain.User
 	err := r.pool.QueryRow(ctx,
 		`UPDATE users SET name = $1, email = $2, updated_at = now()
 		 WHERE id = $3 AND deleted_at IS NULL
@@ -94,24 +87,24 @@ func (r *UserRepository) Update(ctx context.Context, id, name, email string) (Us
 	).Scan(&u.ID, &u.Email, &u.Name, &u.Role, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return User{}, fmt.Errorf("user not found: %s", id)
+			return domain.User{}, fmt.Errorf("user not found: %s", id)
 		}
-		return User{}, fmt.Errorf("update user: %w", err)
+		return domain.User{}, fmt.Errorf("update user: %w", err)
 	}
 	return u, nil
 }
 
-func (r *UserRepository) GetByEmail(ctx context.Context, email string) (User, error) {
-	var u User
+func (r *UserRepository) GetByEmail(ctx context.Context, email string) (domain.User, error) {
+	var u domain.User
 	err := r.pool.QueryRow(ctx,
 		`SELECT id, email, name, role, password_hash, created_at, updated_at
 		 FROM users WHERE email = $1 AND deleted_at IS NULL`, email,
 	).Scan(&u.ID, &u.Email, &u.Name, &u.Role, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return User{}, fmt.Errorf("user not found")
+			return domain.User{}, fmt.Errorf("user not found")
 		}
-		return User{}, fmt.Errorf("get user by email: %w", err)
+		return domain.User{}, fmt.Errorf("get user by email: %w", err)
 	}
 	return u, nil
 }
