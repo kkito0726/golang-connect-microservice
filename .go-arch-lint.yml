@@ -1,0 +1,196 @@
+version: 3
+
+workdir: .
+
+allow:
+  # deepScan は main.go での DI 配線を「依存」と誤検知するため無効
+  deepScan: false
+
+components:
+  # 共有パッケージ
+  $shared_auth:
+    in: internal/auth
+  $shared_config:
+    in: internal/config
+  $shared_db:
+    in: internal/db
+  $shared_middleware:
+    in: internal/middleware
+
+  # 生成コード (proto)
+  $gen_user:
+    in: gen/user/**
+  $gen_product:
+    in: gen/product/**
+  $gen_order:
+    in: gen/order/**
+  $gen_payment:
+    in: gen/payment/**
+
+  # エントリーポイント (依存ルールを適用しない)
+  $cmd:
+    in: services/*/cmd/**
+
+  # User Service
+  $user_domain:
+    in: services/user/internal/domain
+  $user_usecase:
+    in: services/user/internal/usecase
+  $user_repository:
+    in: services/user/internal/repository
+  $user_handler:
+    in: services/user/internal/handler
+
+  # Product Service
+  $product_domain:
+    in: services/product/internal/domain
+  $product_usecase:
+    in: services/product/internal/usecase
+  $product_repository:
+    in: services/product/internal/repository
+  $product_handler:
+    in: services/product/internal/handler
+
+  # Order Service
+  $order_domain:
+    in: services/order/internal/domain
+  $order_usecase:
+    in: services/order/internal/usecase
+  $order_repository:
+    in: services/order/internal/repository
+  $order_client:
+    in: services/order/internal/client
+  $order_handler:
+    in: services/order/internal/handler
+
+  # Payment Service
+  $payment_domain:
+    in: services/payment/internal/domain
+  $payment_usecase:
+    in: services/payment/internal/usecase
+  $payment_repository:
+    in: services/payment/internal/repository
+  $payment_client:
+    in: services/payment/internal/client
+  $payment_handler:
+    in: services/payment/internal/handler
+
+deps:
+  # ── 共有パッケージ ────────────────────────────────────────────
+  $shared_auth:
+    anyVendorDeps: true
+  $shared_config:
+    anyVendorDeps: true
+  $shared_db:
+    anyVendorDeps: true
+  $shared_middleware:
+    anyVendorDeps: true
+    mayDependOn:
+      - $shared_auth
+
+  # ── 生成コード: 全依存許可（自動生成のため制約しない）──────────
+  $gen_user:
+    anyVendorDeps: true
+    anyProjectDeps: true
+  $gen_product:
+    anyVendorDeps: true
+    anyProjectDeps: true
+  $gen_order:
+    anyVendorDeps: true
+    anyProjectDeps: true
+  $gen_payment:
+    anyVendorDeps: true
+    anyProjectDeps: true
+
+  # ── エントリーポイント: 全依存許可 ───────────────────────────
+  $cmd:
+    anyProjectDeps: true
+    anyVendorDeps: true
+
+  # ── domain: 最内層。プロジェクト内の他層には依存しない ────────
+  $user_domain:
+    anyVendorDeps: true
+  $product_domain:
+    anyVendorDeps: true
+  $order_domain:
+    anyVendorDeps: true
+  $payment_domain:
+    anyVendorDeps: true
+
+  # ── usecase: domain のみに依存 ───────────────────────────────
+  $user_usecase:
+    anyVendorDeps: true
+    mayDependOn:
+      - $user_domain
+  $product_usecase:
+    anyVendorDeps: true
+    mayDependOn:
+      - $product_domain
+  $order_usecase:
+    anyVendorDeps: true
+    mayDependOn:
+      - $order_domain
+  $payment_usecase:
+    anyVendorDeps: true
+    mayDependOn:
+      - $payment_domain
+
+  # ── repository: domain のみに依存 ────────────────────────────
+  $user_repository:
+    anyVendorDeps: true
+    mayDependOn:
+      - $user_domain
+  $product_repository:
+    anyVendorDeps: true
+    mayDependOn:
+      - $product_domain
+  $order_repository:
+    anyVendorDeps: true
+    mayDependOn:
+      - $order_domain
+  $payment_repository:
+    anyVendorDeps: true
+    mayDependOn:
+      - $payment_domain
+
+  # ── client: domain + shared_auth + gen に依存 ─────────────────
+  $order_client:
+    anyVendorDeps: true
+    mayDependOn:
+      - $order_domain
+      - $shared_auth
+      - $gen_user
+      - $gen_product
+  $payment_client:
+    anyVendorDeps: true
+    mayDependOn:
+      - $payment_domain
+      - $shared_auth
+      - $gen_order
+
+  # ── handler: domain + usecase + shared_auth + gen に依存 ───────
+  $user_handler:
+    anyVendorDeps: true
+    mayDependOn:
+      - $user_domain
+      - $user_usecase
+      - $shared_auth
+      - $gen_user
+  $product_handler:
+    anyVendorDeps: true
+    mayDependOn:
+      - $product_domain
+      - $product_usecase
+      - $gen_product
+  $order_handler:
+    anyVendorDeps: true
+    mayDependOn:
+      - $order_domain
+      - $order_usecase
+      - $gen_order
+  $payment_handler:
+    anyVendorDeps: true
+    mayDependOn:
+      - $payment_domain
+      - $payment_usecase
+      - $gen_payment
