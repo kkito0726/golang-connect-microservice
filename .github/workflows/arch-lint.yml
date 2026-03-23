@@ -1,0 +1,24 @@
+name: Architecture Lint
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  arch-lint:
+    name: Check dependency direction
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Install go-arch-lint
+        run: go install github.com/fe3dback/go-arch-lint@latest
+
+      - name: Run go-arch-lint
+        run: go-arch-lint check
