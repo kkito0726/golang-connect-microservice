@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
@@ -43,8 +44,8 @@ func (r *ProductRepository) GetByID(ctx context.Context, id string) (domain.Prod
 	).Scan(&p.ID, &p.SKU, &p.Name, &p.Description, &p.PriceCents,
 		&p.StockQuantity, &p.Category, &p.CreatedAt, &p.UpdatedAt)
 	if err != nil {
-		if err == pgx.ErrNoRows {
-			return domain.Product{}, fmt.Errorf("product not found: %s", id)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.Product{}, fmt.Errorf("get product %s: %w", id, domain.ErrNotFound)
 		}
 		return domain.Product{}, fmt.Errorf("get product: %w", err)
 	}
@@ -86,7 +87,7 @@ func (r *ProductRepository) List(ctx context.Context, limit, offset int, categor
 }
 
 func scanProducts(rows pgx.Rows, total int) ([]domain.Product, int, error) {
-	var products []domain.Product
+	products := make([]domain.Product, 0, total)
 	for rows.Next() {
 		var p domain.Product
 		if err := rows.Scan(&p.ID, &p.SKU, &p.Name, &p.Description, &p.PriceCents,
@@ -94,6 +95,9 @@ func scanProducts(rows pgx.Rows, total int) ([]domain.Product, int, error) {
 			return nil, 0, fmt.Errorf("scan product: %w", err)
 		}
 		products = append(products, p)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("iterate products: %w", err)
 	}
 	return products, total, nil
 }
@@ -108,8 +112,8 @@ func (r *ProductRepository) Update(ctx context.Context, id, name, description, c
 	).Scan(&p.ID, &p.SKU, &p.Name, &p.Description, &p.PriceCents,
 		&p.StockQuantity, &p.Category, &p.CreatedAt, &p.UpdatedAt)
 	if err != nil {
-		if err == pgx.ErrNoRows {
-			return domain.Product{}, fmt.Errorf("product not found: %s", id)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.Product{}, fmt.Errorf("update product %s: %w", id, domain.ErrNotFound)
 		}
 		return domain.Product{}, fmt.Errorf("update product: %w", err)
 	}
@@ -124,7 +128,7 @@ func (r *ProductRepository) SoftDelete(ctx context.Context, id string) error {
 		return fmt.Errorf("delete product: %w", err)
 	}
 	if tag.RowsAffected() == 0 {
-		return fmt.Errorf("product not found: %s", id)
+		return fmt.Errorf("delete product %s: %w", id, domain.ErrNotFound)
 	}
 	return nil
 }
@@ -143,15 +147,16 @@ func (r *ProductRepository) UpdateStock(ctx context.Context, productID string, d
 	).Scan(&p.ID, &p.SKU, &p.Name, &p.Description, &p.PriceCents,
 		&p.StockQuantity, &p.Category, &p.CreatedAt, &p.UpdatedAt)
 	if err != nil {
-		if err == pgx.ErrNoRows {
-			return domain.Product{}, domain.StockMovement{}, fmt.Errorf("product not found: %s", productID)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.Product{}, domain.StockMovement{}, fmt.Errorf("update stock %s: %w", productID, domain.ErrNotFound)
 		}
 		return domain.Product{}, domain.StockMovement{}, fmt.Errorf("lock product: %w", err)
 	}
 
 	newQuantity := p.StockQuantity + delta
 	if newQuantity < 0 {
-		return domain.Product{}, domain.StockMovement{}, fmt.Errorf("insufficient stock: have %d, need %d", p.StockQuantity, -delta)
+		return domain.Product{}, domain.StockMovement{}, fmt.Errorf("update stock: have %d, need %d: %w",
+			p.StockQuantity, -delta, domain.ErrInsufficientStock)
 	}
 
 	err = tx.QueryRow(ctx,
@@ -203,6 +208,9 @@ func (r *ProductRepository) GetStockMovements(ctx context.Context, productID str
 			return nil, fmt.Errorf("scan stock movement: %w", err)
 		}
 		movements = append(movements, m)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate stock movements: %w", err)
 	}
 	return movements, nil
 }

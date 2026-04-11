@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
@@ -65,8 +66,8 @@ func (r *OrderRepository) GetByID(ctx context.Context, id string) (domain.Order,
 		 FROM orders WHERE id = $1`, id,
 	).Scan(&order.ID, &order.UserID, &order.Status, &order.TotalCents, &order.CreatedAt, &order.UpdatedAt)
 	if err != nil {
-		if err == pgx.ErrNoRows {
-			return domain.Order{}, fmt.Errorf("order not found: %s", id)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.Order{}, fmt.Errorf("get order %s: %w", id, domain.ErrNotFound)
 		}
 		return domain.Order{}, fmt.Errorf("get order: %w", err)
 	}
@@ -95,6 +96,9 @@ func (r *OrderRepository) getOrderItems(ctx context.Context, orderID string) ([]
 			return nil, fmt.Errorf("scan order item: %w", err)
 		}
 		items = append(items, item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate order items: %w", err)
 	}
 	return items, nil
 }
@@ -146,6 +150,9 @@ func (r *OrderRepository) List(ctx context.Context, userID, status string, limit
 		o.Items = items
 		orders = append(orders, o)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("iterate orders: %w", err)
+	}
 	return orders, total, nil
 }
 
@@ -158,8 +165,8 @@ func (r *OrderRepository) UpdateStatus(ctx context.Context, id, status string) (
 		status, id,
 	).Scan(&order.ID, &order.UserID, &order.Status, &order.TotalCents, &order.CreatedAt, &order.UpdatedAt)
 	if err != nil {
-		if err == pgx.ErrNoRows {
-			return domain.Order{}, fmt.Errorf("order not found: %s", id)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.Order{}, fmt.Errorf("update order status %s: %w", id, domain.ErrNotFound)
 		}
 		return domain.Order{}, fmt.Errorf("update order status: %w", err)
 	}

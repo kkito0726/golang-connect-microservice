@@ -2,7 +2,9 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log/slog"
 
 	"connectrpc.com/connect"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -37,7 +39,7 @@ func (h *ProductHandler) CreateProduct(ctx context.Context, req *connect.Request
 		Category:      req.Msg.Category,
 	})
 	if err != nil {
-		return nil, connect.NewError(connect.CodeAlreadyExists, err)
+		return nil, toConnectError(err)
 	}
 	return connect.NewResponse(&productv1.CreateProductResponse{Product: toProtoProduct(p)}), nil
 }
@@ -49,7 +51,7 @@ func (h *ProductHandler) GetProduct(ctx context.Context, req *connect.Request[pr
 
 	p, err := h.uc.GetProduct(ctx, req.Msg.Id)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, err)
+		return nil, toConnectError(err)
 	}
 	return connect.NewResponse(&productv1.GetProductResponse{Product: toProtoProduct(p)}), nil
 }
@@ -57,7 +59,7 @@ func (h *ProductHandler) GetProduct(ctx context.Context, req *connect.Request[pr
 func (h *ProductHandler) ListProducts(ctx context.Context, req *connect.Request[productv1.ListProductsRequest]) (*connect.Response[productv1.ListProductsResponse], error) {
 	products, total, err := h.uc.ListProducts(ctx, int(req.Msg.PageSize), int(req.Msg.Page), req.Msg.Category)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, toConnectError(err)
 	}
 
 	protoProducts := make([]*productv1.Product, len(products))
@@ -77,7 +79,7 @@ func (h *ProductHandler) UpdateProduct(ctx context.Context, req *connect.Request
 
 	p, err := h.uc.UpdateProduct(ctx, req.Msg.Id, req.Msg.Name, req.Msg.Description, req.Msg.Category, req.Msg.PriceCents)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, err)
+		return nil, toConnectError(err)
 	}
 	return connect.NewResponse(&productv1.UpdateProductResponse{Product: toProtoProduct(p)}), nil
 }
@@ -88,7 +90,7 @@ func (h *ProductHandler) DeleteProduct(ctx context.Context, req *connect.Request
 	}
 
 	if err := h.uc.DeleteProduct(ctx, req.Msg.Id); err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, err)
+		return nil, toConnectError(err)
 	}
 	return connect.NewResponse(&productv1.DeleteProductResponse{}), nil
 }
@@ -100,7 +102,7 @@ func (h *ProductHandler) UpdateStock(ctx context.Context, req *connect.Request[p
 
 	p, mv, err := h.uc.UpdateStock(ctx, req.Msg.ProductId, req.Msg.Delta, req.Msg.Reason.String(), req.Msg.ReferenceId)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeFailedPrecondition, err)
+		return nil, toConnectError(err)
 	}
 	return connect.NewResponse(&productv1.UpdateStockResponse{
 		Product:  toProtoProduct(p),
@@ -115,7 +117,7 @@ func (h *ProductHandler) GetStockLevel(ctx context.Context, req *connect.Request
 
 	p, movements, err := h.uc.GetStockLevel(ctx, req.Msg.ProductId)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, err)
+		return nil, toConnectError(err)
 	}
 
 	protoMovements := make([]*productv1.StockMovement, len(movements))
@@ -151,5 +153,19 @@ func toProtoStockMovement(m domain.StockMovement) *productv1.StockMovement {
 		Reason:      productv1.StockChangeReason(productv1.StockChangeReason_value[m.Reason]),
 		ReferenceId: m.ReferenceID,
 		CreatedAt:   timestamppb.New(m.CreatedAt),
+	}
+}
+
+func toConnectError(err error) error {
+	switch {
+	case errors.Is(err, domain.ErrNotFound):
+		return connect.NewError(connect.CodeNotFound, err)
+	case errors.Is(err, domain.ErrAlreadyExists):
+		return connect.NewError(connect.CodeAlreadyExists, err)
+	case errors.Is(err, domain.ErrInsufficientStock):
+		return connect.NewError(connect.CodeFailedPrecondition, err)
+	default:
+		slog.Error("internal error", "error", err)
+		return connect.NewError(connect.CodeInternal, errors.New("internal error"))
 	}
 }

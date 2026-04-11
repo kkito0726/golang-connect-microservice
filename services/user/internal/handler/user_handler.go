@@ -2,7 +2,9 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log/slog"
 
 	"connectrpc.com/connect"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -37,7 +39,7 @@ func (h *UserHandler) Login(ctx context.Context, req *connect.Request[userv1.Log
 
 	token, expiresAt, err := h.tokenGen.GenerateToken(u.ID, u.Role)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("generate token: %w", err))
+		return nil, toConnectError(err)
 	}
 
 	return connect.NewResponse(&userv1.LoginResponse{
@@ -58,7 +60,7 @@ func (h *UserHandler) CreateUser(ctx context.Context, req *connect.Request[userv
 
 	u, err := h.uc.CreateUser(ctx, req.Msg.Email, req.Msg.Name, req.Msg.Password, role)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeAlreadyExists, fmt.Errorf("create user: %w", err))
+		return nil, toConnectError(err)
 	}
 	return connect.NewResponse(&userv1.CreateUserResponse{User: toProtoUser(u)}), nil
 }
@@ -70,7 +72,7 @@ func (h *UserHandler) GetUser(ctx context.Context, req *connect.Request[userv1.G
 
 	u, err := h.uc.GetUser(ctx, req.Msg.Id)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, err)
+		return nil, toConnectError(err)
 	}
 	return connect.NewResponse(&userv1.GetUserResponse{User: toProtoUser(u)}), nil
 }
@@ -78,7 +80,7 @@ func (h *UserHandler) GetUser(ctx context.Context, req *connect.Request[userv1.G
 func (h *UserHandler) ListUsers(ctx context.Context, req *connect.Request[userv1.ListUsersRequest]) (*connect.Response[userv1.ListUsersResponse], error) {
 	users, total, err := h.uc.ListUsers(ctx, int(req.Msg.PageSize), int(req.Msg.Page))
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, toConnectError(err)
 	}
 
 	protoUsers := make([]*userv1.User, len(users))
@@ -98,7 +100,7 @@ func (h *UserHandler) UpdateUser(ctx context.Context, req *connect.Request[userv
 
 	u, err := h.uc.UpdateUser(ctx, req.Msg.Id, req.Msg.Name, req.Msg.Email)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, err)
+		return nil, toConnectError(err)
 	}
 	return connect.NewResponse(&userv1.UpdateUserResponse{User: toProtoUser(u)}), nil
 }
@@ -109,7 +111,7 @@ func (h *UserHandler) DeleteUser(ctx context.Context, req *connect.Request[userv
 	}
 
 	if err := h.uc.DeleteUser(ctx, req.Msg.Id); err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, err)
+		return nil, toConnectError(err)
 	}
 	return connect.NewResponse(&userv1.DeleteUserResponse{}), nil
 }
@@ -126,5 +128,17 @@ func toProtoUser(u domain.User) *userv1.User {
 		Role:      role,
 		CreatedAt: timestamppb.New(u.CreatedAt),
 		UpdatedAt: timestamppb.New(u.UpdatedAt),
+	}
+}
+
+func toConnectError(err error) error {
+	switch {
+	case errors.Is(err, domain.ErrNotFound):
+		return connect.NewError(connect.CodeNotFound, err)
+	case errors.Is(err, domain.ErrAlreadyExists):
+		return connect.NewError(connect.CodeAlreadyExists, err)
+	default:
+		slog.Error("internal error", "error", err)
+		return connect.NewError(connect.CodeInternal, errors.New("internal error"))
 	}
 }

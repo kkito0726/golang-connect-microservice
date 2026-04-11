@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
@@ -41,8 +42,8 @@ func (r *UserRepository) GetByID(ctx context.Context, id string) (domain.User, e
 		 FROM users WHERE id = $1 AND deleted_at IS NULL`, id,
 	).Scan(&u.ID, &u.Email, &u.Name, &u.Role, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt)
 	if err != nil {
-		if err == pgx.ErrNoRows {
-			return domain.User{}, fmt.Errorf("user not found: %s", id)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.User{}, fmt.Errorf("get user %s: %w", id, domain.ErrNotFound)
 		}
 		return domain.User{}, fmt.Errorf("get user: %w", err)
 	}
@@ -66,13 +67,16 @@ func (r *UserRepository) List(ctx context.Context, limit, offset int) ([]domain.
 	}
 	defer rows.Close()
 
-	var users []domain.User
+	users := make([]domain.User, 0, total)
 	for rows.Next() {
 		var u domain.User
 		if err := rows.Scan(&u.ID, &u.Email, &u.Name, &u.Role, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt); err != nil {
 			return nil, 0, fmt.Errorf("scan user: %w", err)
 		}
 		users = append(users, u)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("iterate users: %w", err)
 	}
 	return users, total, nil
 }
@@ -86,8 +90,8 @@ func (r *UserRepository) Update(ctx context.Context, id, name, email string) (do
 		name, email, id,
 	).Scan(&u.ID, &u.Email, &u.Name, &u.Role, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt)
 	if err != nil {
-		if err == pgx.ErrNoRows {
-			return domain.User{}, fmt.Errorf("user not found: %s", id)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.User{}, fmt.Errorf("update user %s: %w", id, domain.ErrNotFound)
 		}
 		return domain.User{}, fmt.Errorf("update user: %w", err)
 	}
@@ -101,8 +105,8 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (domain.U
 		 FROM users WHERE email = $1 AND deleted_at IS NULL`, email,
 	).Scan(&u.ID, &u.Email, &u.Name, &u.Role, &u.PasswordHash, &u.CreatedAt, &u.UpdatedAt)
 	if err != nil {
-		if err == pgx.ErrNoRows {
-			return domain.User{}, fmt.Errorf("user not found")
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.User{}, fmt.Errorf("get user by email: %w", domain.ErrNotFound)
 		}
 		return domain.User{}, fmt.Errorf("get user by email: %w", err)
 	}
@@ -118,7 +122,7 @@ func (r *UserRepository) SoftDelete(ctx context.Context, id string) error {
 		return fmt.Errorf("delete user: %w", err)
 	}
 	if tag.RowsAffected() == 0 {
-		return fmt.Errorf("user not found: %s", id)
+		return fmt.Errorf("delete user %s: %w", id, domain.ErrNotFound)
 	}
 	return nil
 }
