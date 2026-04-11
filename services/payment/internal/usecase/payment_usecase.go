@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/ken/connect-microservice/services/payment/internal/domain"
 )
@@ -37,7 +38,9 @@ func (uc *PaymentUsecase) CreatePayment(ctx context.Context, orderID, userID, me
 	}
 
 	if err := uc.orderClient.UpdateOrderStatus(ctx, orderID, "confirmed"); err != nil {
-		return domain.Payment{}, fmt.Errorf("update order status: %w", err)
+		// 決済は成功済みのため失敗を返さず、オペレーターが手動で整合性を確認する
+		slog.Error("payment created but order status update failed - manual reconciliation required",
+			"order_id", orderID, "payment_id", payment.ID, "error", err)
 	}
 
 	return payment, nil
@@ -72,7 +75,9 @@ func (uc *PaymentUsecase) RefundPayment(ctx context.Context, id string) (domain.
 	}
 
 	if err := uc.orderClient.CancelOrder(ctx, payment.OrderID); err != nil {
-		return domain.Payment{}, fmt.Errorf("cancel order: %w", err)
+		// 払い戻しは成功済みのため失敗を返さず、オペレーターが手動で整合性を確認する
+		slog.Error("payment refunded but order cancellation failed - manual reconciliation required",
+			"order_id", payment.OrderID, "payment_id", payment.ID, "error", err)
 	}
 
 	return payment, nil

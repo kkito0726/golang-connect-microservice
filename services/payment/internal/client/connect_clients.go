@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -15,6 +16,8 @@ import (
 
 // コンパイル時にインターフェース実装を検証する。
 var _ domain.OrderClient = (*ConnectOrderClient)(nil)
+
+var httpClient = &http.Client{Timeout: 10 * time.Second}
 
 // withAuthHeader は ctx に保存されたトークンを発信リクエストの Authorization ヘッダに転送する。
 func withAuthHeader[T any](ctx context.Context, req *connect.Request[T]) {
@@ -30,7 +33,7 @@ type ConnectOrderClient struct {
 
 func NewConnectOrderClient(baseURL string) *ConnectOrderClient {
 	return &ConnectOrderClient{
-		client: orderv1connect.NewOrderServiceClient(http.DefaultClient, baseURL),
+		client: orderv1connect.NewOrderServiceClient(httpClient, baseURL),
 	}
 }
 

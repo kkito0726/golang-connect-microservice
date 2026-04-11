@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -19,6 +20,8 @@ import (
 var _ domain.UserClient = (*ConnectUserClient)(nil)
 var _ domain.ProductClient = (*ConnectProductClient)(nil)
 
+var httpClient = &http.Client{Timeout: 10 * time.Second}
+
 // withAuthHeader は ctx に保存されたトークンを発信リクエストの Authorization ヘッダに転送する。
 func withAuthHeader[T any](ctx context.Context, req *connect.Request[T]) {
 	if token, ok := auth.TokenFromContext(ctx); ok {
@@ -33,7 +36,7 @@ type ConnectUserClient struct {
 
 func NewConnectUserClient(baseURL string) *ConnectUserClient {
 	return &ConnectUserClient{
-		client: userv1connect.NewUserServiceClient(http.DefaultClient, baseURL),
+		client: userv1connect.NewUserServiceClient(httpClient, baseURL),
 	}
 }
 
@@ -54,7 +57,7 @@ type ConnectProductClient struct {
 
 func NewConnectProductClient(baseURL string) *ConnectProductClient {
 	return &ConnectProductClient{
-		client: productv1connect.NewProductServiceClient(http.DefaultClient, baseURL),
+		client: productv1connect.NewProductServiceClient(httpClient, baseURL),
 	}
 }
 

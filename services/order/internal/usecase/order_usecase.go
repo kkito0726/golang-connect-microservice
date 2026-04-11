@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/ken/connect-microservice/services/order/internal/domain"
 )
@@ -43,10 +44,19 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, input domain.CreateOrde
 		totalCents += product.PriceCents * int64(item.Quantity)
 	}
 
+	var deducted []domain.OrderItem
 	for _, item := range orderItems {
 		if err := uc.productClient.DeductStock(ctx, item.ProductID, item.Quantity); err != nil {
+			// Saga 補償: 扣除済みの在庫を戻す
+			for _, d := range deducted {
+				if rerr := uc.productClient.RestoreStock(ctx, d.ProductID, d.Quantity, ""); rerr != nil {
+					slog.Error("saga compensation failed: stock restore",
+						"product_id", d.ProductID, "error", rerr)
+				}
+			}
 			return domain.Order{}, fmt.Errorf("deduct stock for %s: %w", item.ProductID, err)
 		}
+		deducted = append(deducted, item)
 	}
 
 	return uc.repo.Create(ctx, input.UserID, orderItems, totalCents)
