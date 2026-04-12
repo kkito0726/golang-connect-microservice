@@ -7,7 +7,7 @@ on:
 
 jobs:
   arch-lint:
-    name: Check dependency direction
+    name: Architecture Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
