@@ -1,18 +1,16 @@
-package domain_test
+package domain
 
 import (
 	"errors"
 	"fmt"
 	"testing"
-
-	"github.com/ken/connect-microservice/services/user/internal/domain"
 )
 
 func TestSentinelErrors_NotNil(t *testing.T) {
-	if domain.ErrNotFound == nil {
+	if ErrNotFound == nil {
 		t.Error("ErrNotFound must not be nil")
 	}
-	if domain.ErrAlreadyExists == nil {
+	if ErrAlreadyExists == nil {
 		t.Error("ErrAlreadyExists must not be nil")
 	}
 }
@@ -25,13 +23,13 @@ func TestSentinelErrors_IsDetectsWrapped(t *testing.T) {
 	}{
 		{
 			name:    "wrapped ErrNotFound is detected",
-			wrapped: fmt.Errorf("get user abc: %w", domain.ErrNotFound),
-			target:  domain.ErrNotFound,
+			wrapped: fmt.Errorf("get user abc: %w", ErrNotFound),
+			target:  ErrNotFound,
 		},
 		{
 			name:    "wrapped ErrAlreadyExists is detected",
-			wrapped: fmt.Errorf("create user: %w", domain.ErrAlreadyExists),
-			target:  domain.ErrAlreadyExists,
+			wrapped: fmt.Errorf("create user: %w", ErrAlreadyExists),
+			target:  ErrAlreadyExists,
 		},
 	}
 
@@ -45,10 +43,10 @@ func TestSentinelErrors_IsDetectsWrapped(t *testing.T) {
 }
 
 func TestSentinelErrors_IsDistinct(t *testing.T) {
-	if errors.Is(domain.ErrNotFound, domain.ErrAlreadyExists) {
+	if errors.Is(ErrNotFound, ErrAlreadyExists) {
 		t.Error("ErrNotFound must not match ErrAlreadyExists")
 	}
-	if errors.Is(domain.ErrAlreadyExists, domain.ErrNotFound) {
+	if errors.Is(ErrAlreadyExists, ErrNotFound) {
 		t.Error("ErrAlreadyExists must not match ErrNotFound")
 	}
 }

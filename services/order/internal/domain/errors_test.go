@@ -1,18 +1,16 @@
-package domain_test
+package domain
 
 import (
 	"errors"
 	"fmt"
 	"testing"
-
-	"github.com/ken/connect-microservice/services/order/internal/domain"
 )
 
 func TestSentinelErrors_NotNil(t *testing.T) {
-	if domain.ErrNotFound == nil {
+	if ErrNotFound == nil {
 		t.Error("ErrNotFound must not be nil")
 	}
-	if domain.ErrInsufficientStock == nil {
+	if ErrInsufficientStock == nil {
 		t.Error("ErrInsufficientStock must not be nil")
 	}
 }
@@ -25,13 +23,13 @@ func TestSentinelErrors_IsDetectsWrapped(t *testing.T) {
 	}{
 		{
 			name:    "wrapped ErrNotFound is detected",
-			wrapped: fmt.Errorf("get order abc: %w", domain.ErrNotFound),
-			target:  domain.ErrNotFound,
+			wrapped: fmt.Errorf("get order abc: %w", ErrNotFound),
+			target:  ErrNotFound,
 		},
 		{
 			name:    "wrapped ErrInsufficientStock is detected",
-			wrapped: fmt.Errorf("deduct stock: %w", domain.ErrInsufficientStock),
-			target:  domain.ErrInsufficientStock,
+			wrapped: fmt.Errorf("deduct stock: %w", ErrInsufficientStock),
+			target:  ErrInsufficientStock,
 		},
 	}
 
@@ -45,10 +43,10 @@ func TestSentinelErrors_IsDetectsWrapped(t *testing.T) {
 }
 
 func TestSentinelErrors_IsDistinct(t *testing.T) {
-	if errors.Is(domain.ErrNotFound, domain.ErrInsufficientStock) {
+	if errors.Is(ErrNotFound, ErrInsufficientStock) {
 		t.Error("ErrNotFound must not match ErrInsufficientStock")
 	}
-	if errors.Is(domain.ErrInsufficientStock, domain.ErrNotFound) {
+	if errors.Is(ErrInsufficientStock, ErrNotFound) {
 		t.Error("ErrInsufficientStock must not match ErrNotFound")
 	}
 }
