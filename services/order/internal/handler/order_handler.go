@@ -2,7 +2,9 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log/slog"
 
 	"connectrpc.com/connect"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -41,7 +43,7 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, req *connect.Request[ord
 		Items:  items,
 	})
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, toConnectError(err)
 	}
 	return connect.NewResponse(&orderv1.CreateOrderResponse{Order: toProtoOrder(order)}), nil
 }
@@ -53,7 +55,7 @@ func (h *OrderHandler) GetOrder(ctx context.Context, req *connect.Request[orderv
 
 	order, err := h.uc.GetOrder(ctx, req.Msg.Id)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, err)
+		return nil, toConnectError(err)
 	}
 	return connect.NewResponse(&orderv1.GetOrderResponse{Order: toProtoOrder(order)}), nil
 }
@@ -66,7 +68,7 @@ func (h *OrderHandler) ListOrders(ctx context.Context, req *connect.Request[orde
 
 	orders, total, err := h.uc.ListOrders(ctx, req.Msg.UserId, status, int(req.Msg.PageSize), int(req.Msg.Page))
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, toConnectError(err)
 	}
 
 	protoOrders := make([]*orderv1.Order, len(orders))
@@ -86,7 +88,7 @@ func (h *OrderHandler) UpdateOrderStatus(ctx context.Context, req *connect.Reque
 
 	order, err := h.uc.UpdateOrderStatus(ctx, req.Msg.Id, orderStatusToString(req.Msg.Status))
 	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, err)
+		return nil, toConnectError(err)
 	}
 	return connect.NewResponse(&orderv1.UpdateOrderStatusResponse{Order: toProtoOrder(order)}), nil
 }
@@ -98,7 +100,7 @@ func (h *OrderHandler) CancelOrder(ctx context.Context, req *connect.Request[ord
 
 	order, err := h.uc.CancelOrder(ctx, req.Msg.Id)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeFailedPrecondition, err)
+		return nil, toConnectError(err)
 	}
 	return connect.NewResponse(&orderv1.CancelOrderResponse{Order: toProtoOrder(order)}), nil
 }
@@ -156,5 +158,17 @@ func stringToOrderStatus(s string) orderv1.OrderStatus {
 		return orderv1.OrderStatus_ORDER_STATUS_CANCELLED
 	default:
 		return orderv1.OrderStatus_ORDER_STATUS_UNSPECIFIED
+	}
+}
+
+func toConnectError(err error) error {
+	switch {
+	case errors.Is(err, domain.ErrNotFound):
+		return connect.NewError(connect.CodeNotFound, err)
+	case errors.Is(err, domain.ErrInsufficientStock):
+		return connect.NewError(connect.CodeFailedPrecondition, err)
+	default:
+		slog.Error("internal error", "error", err)
+		return connect.NewError(connect.CodeInternal, errors.New("internal error"))
 	}
 }

@@ -2,7 +2,9 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log/slog"
 
 	"connectrpc.com/connect"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -33,7 +35,7 @@ func (h *PaymentHandler) CreatePayment(ctx context.Context, req *connect.Request
 
 	payment, err := h.uc.CreatePayment(ctx, req.Msg.OrderId, req.Msg.UserId, paymentMethodToString(req.Msg.Method))
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, toConnectError(err)
 	}
 	return connect.NewResponse(&paymentv1.CreatePaymentResponse{Payment: toProtoPayment(payment)}), nil
 }
@@ -45,7 +47,7 @@ func (h *PaymentHandler) GetPayment(ctx context.Context, req *connect.Request[pa
 
 	payment, err := h.uc.GetPayment(ctx, req.Msg.Id)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, err)
+		return nil, toConnectError(err)
 	}
 	return connect.NewResponse(&paymentv1.GetPaymentResponse{Payment: toProtoPayment(payment)}), nil
 }
@@ -53,7 +55,7 @@ func (h *PaymentHandler) GetPayment(ctx context.Context, req *connect.Request[pa
 func (h *PaymentHandler) ListPayments(ctx context.Context, req *connect.Request[paymentv1.ListPaymentsRequest]) (*connect.Response[paymentv1.ListPaymentsResponse], error) {
 	payments, total, err := h.uc.ListPayments(ctx, req.Msg.OrderId, req.Msg.UserId, int(req.Msg.PageSize), int(req.Msg.Page))
 	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, err)
+		return nil, toConnectError(err)
 	}
 
 	protoPayments := make([]*paymentv1.Payment, len(payments))
@@ -73,7 +75,7 @@ func (h *PaymentHandler) RefundPayment(ctx context.Context, req *connect.Request
 
 	payment, err := h.uc.RefundPayment(ctx, req.Msg.Id)
 	if err != nil {
-		return nil, connect.NewError(connect.CodeFailedPrecondition, err)
+		return nil, toConnectError(err)
 	}
 	return connect.NewResponse(&paymentv1.RefundPaymentResponse{Payment: toProtoPayment(payment)}), nil
 }
@@ -129,5 +131,15 @@ func stringToPaymentMethod(s string) paymentv1.PaymentMethod {
 		return paymentv1.PaymentMethod_PAYMENT_METHOD_WALLET
 	default:
 		return paymentv1.PaymentMethod_PAYMENT_METHOD_UNSPECIFIED
+	}
+}
+
+func toConnectError(err error) error {
+	switch {
+	case errors.Is(err, domain.ErrNotFound):
+		return connect.NewError(connect.CodeNotFound, err)
+	default:
+		slog.Error("internal error", "error", err)
+		return connect.NewError(connect.CodeInternal, errors.New("internal error"))
 	}
 }

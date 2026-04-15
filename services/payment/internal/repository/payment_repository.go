@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
@@ -42,8 +43,8 @@ func (r *PaymentRepository) GetByID(ctx context.Context, id string) (domain.Paym
 		 FROM payments WHERE id = $1`, id,
 	).Scan(&p.ID, &p.OrderID, &p.UserID, &p.AmountCents, &p.Status, &p.Method, &p.CreatedAt, &p.UpdatedAt)
 	if err != nil {
-		if err == pgx.ErrNoRows {
-			return domain.Payment{}, fmt.Errorf("payment not found: %s", id)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.Payment{}, fmt.Errorf("get payment %s: %w", id, domain.ErrNotFound)
 		}
 		return domain.Payment{}, fmt.Errorf("get payment: %w", err)
 	}
@@ -92,6 +93,9 @@ func (r *PaymentRepository) List(ctx context.Context, orderID, userID string, li
 		}
 		payments = append(payments, p)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("iterate payments: %w", err)
+	}
 	return payments, total, nil
 }
 
@@ -104,8 +108,8 @@ func (r *PaymentRepository) UpdateStatus(ctx context.Context, id, status string)
 		status, id,
 	).Scan(&p.ID, &p.OrderID, &p.UserID, &p.AmountCents, &p.Status, &p.Method, &p.CreatedAt, &p.UpdatedAt)
 	if err != nil {
-		if err == pgx.ErrNoRows {
-			return domain.Payment{}, fmt.Errorf("payment not found: %s", id)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return domain.Payment{}, fmt.Errorf("update payment status %s: %w", id, domain.ErrNotFound)
 		}
 		return domain.Payment{}, fmt.Errorf("update payment status: %w", err)
 	}

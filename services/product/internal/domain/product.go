@@ -2,7 +2,14 @@ package domain
 
 import (
 	"context"
+	"errors"
 	"time"
+)
+
+var (
+	ErrNotFound          = errors.New("not found")
+	ErrAlreadyExists     = errors.New("already exists")
+	ErrInsufficientStock = errors.New("insufficient stock")
 )
 
 type Product struct {
