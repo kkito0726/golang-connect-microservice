@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"strconv"
 )
@@ -48,7 +49,12 @@ func Load() (Config, error) {
 }
 
 func (c Config) DatabaseURLWithName(dbName string) string {
-	return fmt.Sprintf("postgres://postgres:postgres@localhost:5432/%s?sslmode=disable", dbName)
+	u, err := url.Parse(c.DatabaseURL)
+	if err != nil {
+		return fmt.Sprintf("postgres://postgres:postgres@localhost:5432/%s?sslmode=disable", dbName)
+	}
+	u.Path = "/" + dbName
+	return u.String()
 }
 
 func getEnv(key, defaultValue string) string {
