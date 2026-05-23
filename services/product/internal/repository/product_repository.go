@@ -153,17 +153,16 @@ func (r *ProductRepository) UpdateStock(ctx context.Context, productID string, d
 		return domain.Product{}, domain.StockMovement{}, fmt.Errorf("lock product: %w", err)
 	}
 
-	newQuantity := p.StockQuantity + delta
-	if newQuantity < 0 {
-		return domain.Product{}, domain.StockMovement{}, fmt.Errorf("update stock: have %d, need %d: %w",
-			p.StockQuantity, -delta, domain.ErrInsufficientStock)
+	updated, err := p.ApplyStockDelta(delta)
+	if err != nil {
+		return domain.Product{}, domain.StockMovement{}, fmt.Errorf("update stock: %w", err)
 	}
 
 	err = tx.QueryRow(ctx,
 		`UPDATE products SET stock_quantity = $1, updated_at = now()
 		 WHERE id = $2
 		 RETURNING id, sku, name, description, price_cents, stock_quantity, category, created_at, updated_at`,
-		newQuantity, productID,
+		updated.StockQuantity, productID,
 	).Scan(&p.ID, &p.SKU, &p.Name, &p.Description, &p.PriceCents,
 		&p.StockQuantity, &p.Category, &p.CreatedAt, &p.UpdatedAt)
 	if err != nil {

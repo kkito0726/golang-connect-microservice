@@ -3,11 +3,13 @@ package domain
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 )
 
 var (
-	ErrNotFound = errors.New("not found")
+	ErrNotFound      = errors.New("not found")
+	ErrInvalidStatus = errors.New("invalid status transition")
 )
 
 type Payment struct {
@@ -19,6 +21,27 @@ type Payment struct {
 	Method      string
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
+}
+
+// NewPayment builds a Payment aggregate ready for persistence.
+func NewPayment(orderID, userID, method string, amountCents int64) Payment {
+	return Payment{
+		OrderID:     orderID,
+		UserID:      userID,
+		AmountCents: amountCents,
+		Status:      "completed",
+		Method:      method,
+	}
+}
+
+// Refund validates the status transition and returns a new refunded Payment.
+func (p Payment) Refund() (Payment, error) {
+	if p.Status != "completed" {
+		return Payment{}, fmt.Errorf("%w: cannot refund payment with status %q", ErrInvalidStatus, p.Status)
+	}
+	refunded := p
+	refunded.Status = "refunded"
+	return refunded, nil
 }
 
 type OrderInfo struct {

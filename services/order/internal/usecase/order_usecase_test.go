@@ -61,18 +61,25 @@ func (m *mockProductClient) RestoreStock(_ context.Context, productID string, qu
 }
 
 type mockOrderRepo struct {
-	createFn func(ctx context.Context, userID string, items []domain.OrderItem, totalCents int64) (domain.Order, error)
+	createFn func(ctx context.Context, order domain.Order) (domain.Order, error)
+	orders   map[string]domain.Order
 }
 
-func (m *mockOrderRepo) Create(ctx context.Context, userID string, items []domain.OrderItem, totalCents int64) (domain.Order, error) {
+func (m *mockOrderRepo) Create(ctx context.Context, order domain.Order) (domain.Order, error) {
 	if m.createFn != nil {
-		return m.createFn(ctx, userID, items, totalCents)
+		return m.createFn(ctx, order)
 	}
-	return domain.Order{ID: "order-1", UserID: userID, Items: items, TotalCents: totalCents}, nil
+	return domain.Order{ID: "order-1", UserID: order.UserID, Items: order.Items, TotalCents: order.TotalCents, Status: order.Status}, nil
 }
 
 func (m *mockOrderRepo) GetByID(_ context.Context, id string) (domain.Order, error) {
-	return domain.Order{ID: id}, nil
+	if m.orders != nil {
+		if o, ok := m.orders[id]; ok {
+			return o, nil
+		}
+		return domain.Order{}, domain.ErrNotFound
+	}
+	return domain.Order{ID: id, Status: "pending"}, nil
 }
 
 func (m *mockOrderRepo) List(_ context.Context, _, _ string, _, _ int) ([]domain.Order, int, error) {

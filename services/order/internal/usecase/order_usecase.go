@@ -23,31 +23,23 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, input domain.CreateOrde
 		return domain.Order{}, fmt.Errorf("user not found: %w", err)
 	}
 
-	var orderItems []domain.OrderItem
-	var totalCents int64
-
+	products := make(map[string]domain.ProductInfo, len(input.Items))
 	for _, item := range input.Items {
 		product, err := uc.productClient.GetProduct(ctx, item.ProductID)
 		if err != nil {
 			return domain.Order{}, fmt.Errorf("product %s not found: %w", item.ProductID, err)
 		}
-		if product.StockQuantity < item.Quantity {
-			return domain.Order{}, fmt.Errorf("insufficient stock for %s: have %d, want %d",
-				product.Name, product.StockQuantity, item.Quantity)
-		}
-		orderItems = append(orderItems, domain.OrderItem{
-			ProductID:      item.ProductID,
-			ProductName:    product.Name,
-			Quantity:       item.Quantity,
-			UnitPriceCents: product.PriceCents,
-		})
-		totalCents += product.PriceCents * int64(item.Quantity)
+		products[item.ProductID] = product
+	}
+
+	order, err := domain.NewOrder(input.UserID, input.Items, products)
+	if err != nil {
+		return domain.Order{}, err
 	}
 
 	var deducted []domain.OrderItem
-	for _, item := range orderItems {
+	for _, item := range order.Items {
 		if err := uc.productClient.DeductStock(ctx, item.ProductID, item.Quantity); err != nil {
-			// Saga 補償: 扣除済みの在庫を戻す
 			for _, d := range deducted {
 				if rerr := uc.productClient.RestoreStock(ctx, d.ProductID, d.Quantity, ""); rerr != nil {
 					slog.Error("saga compensation failed: stock restore",
@@ -59,7 +51,7 @@ func (uc *OrderUsecase) CreateOrder(ctx context.Context, input domain.CreateOrde
 		deducted = append(deducted, item)
 	}
 
-	return uc.repo.Create(ctx, input.UserID, orderItems, totalCents)
+	return uc.repo.Create(ctx, order)
 }
 
 func (uc *OrderUsecase) GetOrder(ctx context.Context, id string) (domain.Order, error) {
@@ -85,13 +77,16 @@ func (uc *OrderUsecase) CancelOrder(ctx context.Context, id string) (domain.Orde
 	if err != nil {
 		return domain.Order{}, err
 	}
-	if order.Status != "pending" {
-		return domain.Order{}, fmt.Errorf("can only cancel pending orders, current status: %s", order.Status)
+
+	cancelled, err := order.Cancel()
+	if err != nil {
+		return domain.Order{}, err
 	}
-	for _, item := range order.Items {
+
+	for _, item := range cancelled.Items {
 		if err := uc.productClient.RestoreStock(ctx, item.ProductID, item.Quantity, order.ID); err != nil {
 			return domain.Order{}, fmt.Errorf("restore stock for %s: %w", item.ProductID, err)
 		}
 	}
-	return uc.repo.UpdateStatus(ctx, id, "cancelled")
+	return uc.repo.UpdateStatus(ctx, id, cancelled.Status)
 }

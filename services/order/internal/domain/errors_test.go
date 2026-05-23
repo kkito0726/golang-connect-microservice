@@ -13,6 +13,9 @@ func TestSentinelErrors_NotNil(t *testing.T) {
 	if ErrInsufficientStock == nil {
 		t.Error("ErrInsufficientStock must not be nil")
 	}
+	if ErrInvalidStatus == nil {
+		t.Error("ErrInvalidStatus must not be nil")
+	}
 }
 
 func TestSentinelErrors_IsDetectsWrapped(t *testing.T) {
@@ -31,6 +34,11 @@ func TestSentinelErrors_IsDetectsWrapped(t *testing.T) {
 			wrapped: fmt.Errorf("deduct stock: %w", ErrInsufficientStock),
 			target:  ErrInsufficientStock,
 		},
+		{
+			name:    "wrapped ErrInvalidStatus is detected",
+			wrapped: fmt.Errorf("cancel order: %w", ErrInvalidStatus),
+			target:  ErrInvalidStatus,
+		},
 	}
 
 	for _, tt := range tests {
@@ -43,10 +51,17 @@ func TestSentinelErrors_IsDetectsWrapped(t *testing.T) {
 }
 
 func TestSentinelErrors_IsDistinct(t *testing.T) {
-	if errors.Is(ErrNotFound, ErrInsufficientStock) {
-		t.Error("ErrNotFound must not match ErrInsufficientStock")
+	pairs := [][2]error{
+		{ErrNotFound, ErrInsufficientStock},
+		{ErrNotFound, ErrInvalidStatus},
+		{ErrInsufficientStock, ErrInvalidStatus},
 	}
-	if errors.Is(ErrInsufficientStock, ErrNotFound) {
-		t.Error("ErrInsufficientStock must not match ErrNotFound")
+	for _, p := range pairs {
+		if errors.Is(p[0], p[1]) {
+			t.Errorf("%v must not match %v", p[0], p[1])
+		}
+		if errors.Is(p[1], p[0]) {
+			t.Errorf("%v must not match %v", p[1], p[0])
+		}
 	}
 }

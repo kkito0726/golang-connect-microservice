@@ -3,6 +3,7 @@ package domain
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 )
 
@@ -22,6 +23,18 @@ type Product struct {
 	Category      string
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
+}
+
+// ApplyStockDelta validates and applies a stock change, returning a new Product.
+// delta > 0 adds stock; delta < 0 deducts stock.
+func (p Product) ApplyStockDelta(delta int32) (Product, error) {
+	newQty := p.StockQuantity + delta
+	if newQty < 0 {
+		return Product{}, fmt.Errorf("have %d, need %d: %w", p.StockQuantity, -delta, ErrInsufficientStock)
+	}
+	updated := p
+	updated.StockQuantity = newQty
+	return updated, nil
 }
 
 type StockMovement struct {
