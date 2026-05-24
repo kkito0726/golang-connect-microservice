@@ -26,13 +26,7 @@ func (uc *PaymentUsecase) CreatePayment(ctx context.Context, orderID, userID, me
 		return domain.Payment{}, fmt.Errorf("order does not belong to user")
 	}
 
-	payment, err := uc.repo.Create(ctx, domain.Payment{
-		OrderID:     orderID,
-		UserID:      userID,
-		AmountCents: order.TotalCents,
-		Status:      "completed",
-		Method:      method,
-	})
+	payment, err := uc.repo.Create(ctx, domain.NewPayment(orderID, userID, method, order.TotalCents))
 	if err != nil {
 		return domain.Payment{}, fmt.Errorf("create payment: %w", err)
 	}
@@ -65,11 +59,13 @@ func (uc *PaymentUsecase) RefundPayment(ctx context.Context, id string) (domain.
 	if err != nil {
 		return domain.Payment{}, err
 	}
-	if payment.Status != "completed" {
-		return domain.Payment{}, fmt.Errorf("can only refund completed payments, current status: %s", payment.Status)
+
+	refunded, err := payment.Refund()
+	if err != nil {
+		return domain.Payment{}, err
 	}
 
-	payment, err = uc.repo.UpdateStatus(ctx, id, "refunded")
+	payment, err = uc.repo.UpdateStatus(ctx, id, refunded.Status)
 	if err != nil {
 		return domain.Payment{}, err
 	}

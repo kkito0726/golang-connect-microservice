@@ -21,7 +21,7 @@ func NewOrderRepository(pool *pgxpool.Pool) *OrderRepository {
 
 var _ domain.OrderRepository = (*OrderRepository)(nil)
 
-func (r *OrderRepository) Create(ctx context.Context, userID string, items []domain.OrderItem, totalCents int64) (domain.Order, error) {
+func (r *OrderRepository) Create(ctx context.Context, in domain.Order) (domain.Order, error) {
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
 		return domain.Order{}, fmt.Errorf("begin transaction: %w", err)
@@ -31,15 +31,15 @@ func (r *OrderRepository) Create(ctx context.Context, userID string, items []dom
 	var order domain.Order
 	err = tx.QueryRow(ctx,
 		`INSERT INTO orders (user_id, status, total_cents)
-		 VALUES ($1, 'pending', $2)
+		 VALUES ($1, $2, $3)
 		 RETURNING id, user_id, status, total_cents, created_at, updated_at`,
-		userID, totalCents,
+		in.UserID, in.Status, in.TotalCents,
 	).Scan(&order.ID, &order.UserID, &order.Status, &order.TotalCents, &order.CreatedAt, &order.UpdatedAt)
 	if err != nil {
 		return domain.Order{}, fmt.Errorf("insert order: %w", err)
 	}
 
-	for _, item := range items {
+	for _, item := range in.Items {
 		var oi domain.OrderItem
 		err = tx.QueryRow(ctx,
 			`INSERT INTO order_items (order_id, product_id, product_name, quantity, unit_price_cents)
