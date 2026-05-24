@@ -11,8 +11,10 @@ import (
 // ---- モック ----------------------------------------------------------------
 
 type mockPaymentRepo struct {
-	payments map[string]domain.Payment
-	createFn func(ctx context.Context, p domain.Payment) (domain.Payment, error)
+	payments       map[string]domain.Payment
+	createFn       func(ctx context.Context, p domain.Payment) (domain.Payment, error)
+	lastListLimit  int
+	lastListOffset int
 }
 
 func (m *mockPaymentRepo) Create(ctx context.Context, p domain.Payment) (domain.Payment, error) {
@@ -31,7 +33,9 @@ func (m *mockPaymentRepo) GetByID(_ context.Context, id string) (domain.Payment,
 	return p, nil
 }
 
-func (m *mockPaymentRepo) List(_ context.Context, _, _ string, _, _ int) ([]domain.Payment, int, error) {
+func (m *mockPaymentRepo) List(_ context.Context, _, _ string, limit, offset int) ([]domain.Payment, int, error) {
+	m.lastListLimit = limit
+	m.lastListOffset = offset
 	return nil, 0, nil
 }
 
@@ -121,6 +125,20 @@ func TestCreatePayment_UpdateOrderStatusFails_ReturnsPaymentAnyway(t *testing.T)
 	}
 }
 
+// 注文が見つからない場合はエラーを返す
+func TestCreatePayment_OrderNotFound(t *testing.T) {
+	t.Parallel()
+
+	orderClient := &mockOrderClient{orders: map[string]domain.OrderInfo{}}
+	uc := NewPaymentUsecase(&mockPaymentRepo{}, orderClient)
+
+	_, err := uc.CreatePayment(context.Background(), "missing-order", "u1", "credit_card")
+
+	if err == nil {
+		t.Fatal("want error for missing order, got nil")
+	}
+}
+
 // 別ユーザーの注文には決済できない
 func TestCreatePayment_WrongUser_ReturnsError(t *testing.T) {
 	t.Parallel()
@@ -140,6 +158,20 @@ func TestCreatePayment_WrongUser_ReturnsError(t *testing.T) {
 }
 
 // ---- RefundPayment テスト --------------------------------------------------
+
+// 決済が見つからない場合はエラーを返す
+func TestRefundPayment_PaymentNotFound(t *testing.T) {
+	t.Parallel()
+
+	repo := &mockPaymentRepo{payments: map[string]domain.Payment{}}
+	uc := NewPaymentUsecase(repo, &mockOrderClient{})
+
+	_, err := uc.RefundPayment(context.Background(), "missing")
+
+	if !errors.Is(err, domain.ErrNotFound) {
+		t.Errorf("want ErrNotFound, got %v", err)
+	}
+}
 
 // 正常系: 払い戻しが完了し、注文もキャンセルされる
 func TestRefundPayment_Success(t *testing.T) {
@@ -205,5 +237,74 @@ func TestRefundPayment_NotCompleted_ReturnsError(t *testing.T) {
 
 	if err == nil {
 		t.Fatal("want error for non-completed payment, got nil")
+	}
+}
+
+// ---- GetPayment -------------------------------------------------------------
+
+func TestGetPayment_Success(t *testing.T) {
+	t.Parallel()
+
+	repo := &mockPaymentRepo{
+		payments: map[string]domain.Payment{
+			"pay-1": {ID: "pay-1", Status: "completed", AmountCents: 3000},
+		},
+	}
+	uc := NewPaymentUsecase(repo, &mockOrderClient{})
+
+	p, err := uc.GetPayment(context.Background(), "pay-1")
+
+	if err != nil {
+		t.Fatalf("want no error, got %v", err)
+	}
+	if p.ID != "pay-1" {
+		t.Errorf("ID = %q, want %q", p.ID, "pay-1")
+	}
+}
+
+func TestGetPayment_NotFound(t *testing.T) {
+	t.Parallel()
+
+	uc := NewPaymentUsecase(&mockPaymentRepo{payments: map[string]domain.Payment{}}, &mockOrderClient{})
+
+	_, err := uc.GetPayment(context.Background(), "missing")
+
+	if !errors.Is(err, domain.ErrNotFound) {
+		t.Errorf("want ErrNotFound, got %v", err)
+	}
+}
+
+// ---- ListPayments -----------------------------------------------------------
+
+func TestListPayments_PageNormalization(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name           string
+		pageSize, page int
+		wantLimit      int
+		wantOffset     int
+	}{
+		{"zero values default to 20/0", 0, 0, 20, 0},
+		{"negative values default to 20/0", -1, -1, 20, 0},
+		{"explicit page 2 with size 10", 10, 2, 10, 10},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			repo := &mockPaymentRepo{}
+			uc := NewPaymentUsecase(repo, &mockOrderClient{})
+
+			uc.ListPayments(context.Background(), "", "", tt.pageSize, tt.page)
+
+			if repo.lastListLimit != tt.wantLimit {
+				t.Errorf("limit = %d, want %d", repo.lastListLimit, tt.wantLimit)
+			}
+			if repo.lastListOffset != tt.wantOffset {
+				t.Errorf("offset = %d, want %d", repo.lastListOffset, tt.wantOffset)
+			}
+		})
 	}
 }
