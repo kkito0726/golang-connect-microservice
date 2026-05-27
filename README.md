@@ -115,7 +115,7 @@ sequenceDiagram
 
 | Category | Technology |
 |----------|-----------|
-| Language | Go 1.26 |
+| Language | Go 1.25 |
 | RPC Framework | [Connect RPC](https://connectrpc.com/) (connectrpc.com/connect) |
 | Protocol | Protocol Buffers v3 |
 | Authentication | JWT (HS256) — [golang-jwt/jwt](https://github.com/golang-jwt/jwt) v5 |
@@ -226,7 +226,9 @@ sequenceDiagram
 ├── docs/
 │   ├── index.html                  # Auto-generated API documentation
 │   └── postman/
-│       └── postman_collection.json # Postman collection (with auth)
+│       ├── postman_collection.json          # Postman collection (with auth)
+│       ├── postman_environment_local.json   # ローカル開発用環境変数
+│       └── postman_environment_docker.json  # Docker 環境用環境変数
 │
 ├── web/                            # Admin Panel (Next.js)
 │   ├── src/
@@ -246,8 +248,10 @@ sequenceDiagram
 │   │       ├── api.ts              #     Connect RPC client wrapper & types
 │   │       └── auth.ts             #     Token storage (localStorage)
 │   ├── next.config.ts              #   API proxy rewrites
+│   ├── postcss.config.mjs
 │   ├── package.json
-│   └── tsconfig.json
+│   ├── tsconfig.json
+│   └── Dockerfile                  #   Production image (standalone build)
 │
 ├── docker-compose.yaml             # All services + PostgreSQL
 ├── Dockerfile                      # Multi-stage build (shared by all services)
@@ -457,7 +461,7 @@ erDiagram
 ### Prerequisites
 
 - [Docker](https://www.docker.com/) & Docker Compose
-- [Go](https://go.dev/) 1.26+ (Proto コード生成・ローカル開発用)
+- [Go](https://go.dev/) 1.25+ (Proto コード生成・ローカル開発用)
 - [Buf CLI](https://buf.build/docs/installation) (Proto コード生成用)
 - [Node.js](https://nodejs.org/) 18+ (Admin Panel ローカル開発用、Docker 利用時は不要)
 
@@ -501,6 +505,9 @@ curl -s -X POST http://localhost:8080/user.v1.UserService/Login \
 | `make down-v` | 全サービスを停止 + データ削除 |
 | `make logs` | 全サービスのログを表示 |
 | `make logs-user` | user-service のログを表示 |
+| `make logs-product` | product-service のログを表示 |
+| `make logs-order` | order-service のログを表示 |
+| `make logs-payment` | payment-service のログを表示 |
 | `make logs-web` | Admin Panel のログを表示 |
 | `make proto` | Proto ファイルから Go コードを再生成 |
 | `make sqlc` | SQL クエリから Go コードを再生成 (全サービス) |
@@ -619,6 +626,7 @@ open docs/index.html
 ```
 
 Postman コレクションは `docs/postman/postman_collection.json` にあります。
+環境ファイル (`postman_environment_local.json` / `postman_environment_docker.json`) をインポートし、用途に合わせて切り替えてください。
 `Login` リクエストを実行すると `{{token}}` 変数に自動保存され、以降のリクエストで使用されます。
 
 ## Design Decisions
