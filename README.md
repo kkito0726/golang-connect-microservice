@@ -122,6 +122,7 @@ sequenceDiagram
 | Database | PostgreSQL 16 |
 | DB Driver | [pgx](https://github.com/jackc/pgx) v5 (pgxpool) |
 | Migration | [golang-migrate](https://github.com/golang-migrate/migrate) v4 |
+| Query Generation | [sqlc](https://sqlc.dev/) v1.31 |
 | Code Generation | [Buf](https://buf.build/) CLI |
 | API Docs | [protoc-gen-doc](https://github.com/pseudomuto/protoc-gen-doc) |
 | Container | Docker Compose |
@@ -165,41 +166,57 @@ sequenceDiagram
 ├── services/
 │   ├── user/                       # User Service (:8080)
 │   │   ├── cmd/server/main.go      #   Entrypoint
+│   │   ├── db/
+│   │   │   ├── query/user.sql      #   sqlc 名前付きクエリ定義
+│   │   │   └── sqlc/               #   sqlc 生成コード (db.go / models.go / user.sql.go)
 │   │   ├── internal/
 │   │   │   ├── domain/             #   Entity types & repository interface (最内層)
 │   │   │   ├── handler/            #   Connect RPC handler (Login + CRUD)
 │   │   │   ├── usecase/            #   Business logic
-│   │   │   └── repository/         #   PostgreSQL queries
-│   │   └── migrations/             #   SQL migration files
+│   │   │   └── repository/         #   sqlc 生成コードのアダプター
+│   │   ├── migrations/             #   SQL migration files
+│   │   └── sqlc.yaml               #   sqlc 設定
 │   │
 │   ├── product/                    # Product Service (:8081)
 │   │   ├── cmd/server/main.go
+│   │   ├── db/
+│   │   │   ├── query/product.sql
+│   │   │   └── sqlc/
 │   │   ├── internal/
 │   │   │   ├── domain/             #   Entity types & repository interface
 │   │   │   ├── handler/
 │   │   │   ├── usecase/
 │   │   │   └── repository/
-│   │   └── migrations/
+│   │   ├── migrations/
+│   │   └── sqlc.yaml
 │   │
 │   ├── order/                      # Order Service (:8082)
 │   │   ├── cmd/server/main.go
+│   │   ├── db/
+│   │   │   ├── query/order.sql
+│   │   │   └── sqlc/
 │   │   ├── internal/
 │   │   │   ├── domain/             #   Entity types, repository & client interfaces
 │   │   │   ├── handler/
 │   │   │   ├── usecase/
 │   │   │   ├── client/             #   Connect clients for user/product services
 │   │   │   └── repository/
-│   │   └── migrations/
+│   │   ├── migrations/
+│   │   └── sqlc.yaml
 │   │
 │   └── payment/                    # Payment Service (:8083)
 │       ├── cmd/server/main.go
+│       ├── db/
+│       │   ├── query/payment.sql
+│       │   └── sqlc/
 │       ├── internal/
 │       │   ├── domain/             #   Entity types, repository & client interfaces
 │       │   ├── handler/
 │       │   ├── usecase/
 │       │   ├── client/             #   Connect client for order-service
 │       │   └── repository/
-│       └── migrations/
+│       ├── migrations/
+│       └── sqlc.yaml
 │
 ├── scripts/
 │   ├── init-db.sh                  # Creates 4 databases on PostgreSQL init
@@ -486,6 +503,7 @@ curl -s -X POST http://localhost:8080/user.v1.UserService/Login \
 | `make logs-user` | user-service のログを表示 |
 | `make logs-web` | Admin Panel のログを表示 |
 | `make proto` | Proto ファイルから Go コードを再生成 |
+| `make sqlc` | SQL クエリから Go コードを再生成 (全サービス) |
 | `make lint` | Proto ファイルの Lint |
 | `make docs` | API ドキュメントを HTML で生成 |
 | `make test` | テスト実行 |
@@ -618,6 +636,7 @@ Postman コレクションは `docs/postman/postman_collection.json` にあり�
 | **Soft Delete** | ユーザー・商品は論理削除。注文履歴の整合性を維持 |
 | **Stock Movements (audit trail)** | 在庫変動の全履歴を記録。在庫不整合のデバッグに活用 |
 | **Denormalized product_name in order_items** | 注文時点の商品名を保持。後の商品名変更に影響されない |
+| **sqlc によるクエリ生成** | 手書きの raw SQL と `.Scan()` を排除。`db/query/*.sql` に集約した名前付きクエリから型安全な Go コードを生成。スキーマと照合することで列名 typo や型不一致をコード生成時点で検出できる。repository 層は生成コードのアダプターとして機能し、ドメインインターフェースは変更しない |
 | **Simulated payment** | 学習目的のため決済処理は常に成功するシミュレーション |
 | **Shared Dockerfile with ARG** | 4サービスで1つの Dockerfile を共有。`SERVICE_NAME` ARG でビルド対象を切替 |
 | **Next.js Rewrites for API Proxy** | フロントエンドから各サービスへの通信を Next.js の rewrites でプロキシ。CORS 設定不要 |
