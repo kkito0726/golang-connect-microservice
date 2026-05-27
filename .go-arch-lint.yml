@@ -27,6 +27,16 @@ components:
   $gen_payment:
     in: gen/payment/**
 
+  # 生成コード (sqlc)
+  $db_user:
+    in: services/user/db/**
+  $db_product:
+    in: services/product/db/**
+  $db_order:
+    in: services/order/db/**
+  $db_payment:
+    in: services/payment/db/**
+
   # エントリーポイント (依存ルールを適用しない)
   $cmd:
     in: services/*/cmd/**
@@ -102,6 +112,16 @@ deps:
     anyVendorDeps: true
     anyProjectDeps: true
 
+  # ── sqlc 生成コード: vendor のみに依存（pgx/v5 等）─────────────
+  $db_user:
+    anyVendorDeps: true
+  $db_product:
+    anyVendorDeps: true
+  $db_order:
+    anyVendorDeps: true
+  $db_payment:
+    anyVendorDeps: true
+
   # ── エントリーポイント: 全依存許可 ───────────────────────────
   $cmd:
     anyProjectDeps: true
@@ -135,23 +155,27 @@ deps:
     mayDependOn:
       - $payment_domain
 
-  # ── repository: domain のみに依存 ────────────────────────────
+  # ── repository: domain + sqlc 生成コードに依存 ───────────────
   $user_repository:
     anyVendorDeps: true
     mayDependOn:
       - $user_domain
+      - $db_user
   $product_repository:
     anyVendorDeps: true
     mayDependOn:
       - $product_domain
+      - $db_product
   $order_repository:
     anyVendorDeps: true
     mayDependOn:
       - $order_domain
+      - $db_order
   $payment_repository:
     anyVendorDeps: true
     mayDependOn:
       - $payment_domain
+      - $db_payment
 
   # ── client: domain + shared_auth + gen に依存 ─────────────────
   $order_client:
