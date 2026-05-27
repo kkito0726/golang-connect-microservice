@@ -1,4 +1,10 @@
-.PHONY: proto build up down logs clean test docs logs-web
+.PHONY: proto build up down logs clean test docs logs-web sqlc
+
+sqlc:
+	cd services/user    && sqlc generate
+	cd services/product && sqlc generate
+	cd services/order   && sqlc generate
+	cd services/payment && sqlc generate
 
 proto:
 	cd proto && buf generate

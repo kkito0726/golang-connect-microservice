@@ -2,21 +2,26 @@ package repository
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	db "github.com/ken/connect-microservice/services/order/db/sqlc"
 	"github.com/ken/connect-microservice/services/order/internal/domain"
 )
 
 type OrderRepository struct {
-	pool *pgxpool.Pool
+	pool    *pgxpool.Pool
+	queries *db.Queries
 }
 
 func NewOrderRepository(pool *pgxpool.Pool) *OrderRepository {
-	return &OrderRepository{pool: pool}
+	return &OrderRepository{pool: pool, queries: db.New(pool)}
 }
 
 var _ domain.OrderRepository = (*OrderRepository)(nil)
@@ -28,43 +33,49 @@ func (r *OrderRepository) Create(ctx context.Context, in domain.Order) (domain.O
 	}
 	defer tx.Rollback(ctx)
 
-	var order domain.Order
-	err = tx.QueryRow(ctx,
-		`INSERT INTO orders (user_id, status, total_cents)
-		 VALUES ($1, $2, $3)
-		 RETURNING id, user_id, status, total_cents, created_at, updated_at`,
-		in.UserID, in.Status, in.TotalCents,
-	).Scan(&order.ID, &order.UserID, &order.Status, &order.TotalCents, &order.CreatedAt, &order.UpdatedAt)
+	qtx := r.queries.WithTx(tx)
+
+	orderRow, err := qtx.CreateOrder(ctx, db.CreateOrderParams{
+		UserID:     in.UserID,
+		Status:     in.Status,
+		TotalCents: in.TotalCents,
+	})
 	if err != nil {
 		return domain.Order{}, fmt.Errorf("insert order: %w", err)
 	}
 
+	items := make([]domain.OrderItem, 0, len(in.Items))
 	for _, item := range in.Items {
-		var oi domain.OrderItem
-		err = tx.QueryRow(ctx,
-			`INSERT INTO order_items (order_id, product_id, product_name, quantity, unit_price_cents)
-			 VALUES ($1, $2, $3, $4, $5)
-			 RETURNING id, order_id, product_id, product_name, quantity, unit_price_cents`,
-			order.ID, item.ProductID, item.ProductName, item.Quantity, item.UnitPriceCents,
-		).Scan(&oi.ID, &oi.OrderID, &oi.ProductID, &oi.ProductName, &oi.Quantity, &oi.UnitPriceCents)
+		itemRow, err := qtx.CreateOrderItem(ctx, db.CreateOrderItemParams{
+			OrderID:        orderRow.ID,
+			ProductID:      item.ProductID,
+			ProductName:    item.ProductName,
+			Quantity:       item.Quantity,
+			UnitPriceCents: item.UnitPriceCents,
+		})
 		if err != nil {
 			return domain.Order{}, fmt.Errorf("insert order item: %w", err)
 		}
-		order.Items = append(order.Items, oi)
+		items = append(items, toOrderItem(itemRow))
 	}
 
 	if err := tx.Commit(ctx); err != nil {
 		return domain.Order{}, fmt.Errorf("commit transaction: %w", err)
 	}
-	return order, nil
+
+	return domain.Order{
+		ID:         orderRow.ID,
+		UserID:     orderRow.UserID,
+		Status:     orderRow.Status,
+		TotalCents: orderRow.TotalCents,
+		Items:      items,
+		CreatedAt:  orderRow.CreatedAt.Time,
+		UpdatedAt:  orderRow.UpdatedAt.Time,
+	}, nil
 }
 
 func (r *OrderRepository) GetByID(ctx context.Context, id string) (domain.Order, error) {
-	var order domain.Order
-	err := r.pool.QueryRow(ctx,
-		`SELECT id, user_id, status, total_cents, created_at, updated_at
-		 FROM orders WHERE id = $1`, id,
-	).Scan(&order.ID, &order.UserID, &order.Status, &order.TotalCents, &order.CreatedAt, &order.UpdatedAt)
+	orderRow, err := r.queries.GetOrderByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return domain.Order{}, fmt.Errorf("get order %s: %w", id, domain.ErrNotFound)
@@ -72,98 +83,74 @@ func (r *OrderRepository) GetByID(ctx context.Context, id string) (domain.Order,
 		return domain.Order{}, fmt.Errorf("get order: %w", err)
 	}
 
-	items, err := r.getOrderItems(ctx, id)
+	itemRows, err := r.queries.GetOrderItems(ctx, id)
 	if err != nil {
-		return domain.Order{}, err
+		return domain.Order{}, fmt.Errorf("list order items: %w", err)
 	}
-	order.Items = items
-	return order, nil
-}
 
-func (r *OrderRepository) getOrderItems(ctx context.Context, orderID string) ([]domain.OrderItem, error) {
-	rows, err := r.pool.Query(ctx,
-		`SELECT id, order_id, product_id, product_name, quantity, unit_price_cents
-		 FROM order_items WHERE order_id = $1`, orderID)
-	if err != nil {
-		return nil, fmt.Errorf("list order items: %w", err)
+	items := make([]domain.OrderItem, len(itemRows))
+	for i, row := range itemRows {
+		items[i] = toOrderItem(row)
 	}
-	defer rows.Close()
 
-	var items []domain.OrderItem
-	for rows.Next() {
-		var item domain.OrderItem
-		if err := rows.Scan(&item.ID, &item.OrderID, &item.ProductID, &item.ProductName, &item.Quantity, &item.UnitPriceCents); err != nil {
-			return nil, fmt.Errorf("scan order item: %w", err)
-		}
-		items = append(items, item)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterate order items: %w", err)
-	}
-	return items, nil
+	return domain.Order{
+		ID:         orderRow.ID,
+		UserID:     orderRow.UserID,
+		Status:     orderRow.Status,
+		TotalCents: orderRow.TotalCents,
+		Items:      items,
+		CreatedAt:  orderRow.CreatedAt.Time,
+		UpdatedAt:  orderRow.UpdatedAt.Time,
+	}, nil
 }
 
 func (r *OrderRepository) List(ctx context.Context, userID, status string, limit, offset int) ([]domain.Order, int, error) {
-	query := `SELECT id, user_id, status, total_cents, created_at, updated_at FROM orders WHERE 1=1`
-	countQuery := `SELECT COUNT(*) FROM orders WHERE 1=1`
-	args := []any{}
-	argIdx := 1
-
-	if userID != "" {
-		query += fmt.Sprintf(` AND user_id = $%d`, argIdx)
-		countQuery += fmt.Sprintf(` AND user_id = $%d`, argIdx)
-		args = append(args, userID)
-		argIdx++
-	}
-	if status != "" {
-		query += fmt.Sprintf(` AND status = $%d`, argIdx)
-		countQuery += fmt.Sprintf(` AND status = $%d`, argIdx)
-		args = append(args, status)
-		argIdx++
-	}
-
-	var total int
-	err := r.pool.QueryRow(ctx, countQuery, args...).Scan(&total)
+	total, err := r.queries.CountOrders(ctx, db.CountOrdersParams{
+		UserID: stringToUUID(userID),
+		Status: nullableString(status),
+	})
 	if err != nil {
 		return nil, 0, fmt.Errorf("count orders: %w", err)
 	}
 
-	query += fmt.Sprintf(` ORDER BY created_at DESC LIMIT $%d OFFSET $%d`, argIdx, argIdx+1)
-	args = append(args, limit, offset)
-
-	rows, err := r.pool.Query(ctx, query, args...)
+	orderRows, err := r.queries.ListOrders(ctx, db.ListOrdersParams{
+		UserID: stringToUUID(userID),
+		Status: nullableString(status),
+		Limit:  int32(limit),
+		Offset: int32(offset),
+	})
 	if err != nil {
 		return nil, 0, fmt.Errorf("list orders: %w", err)
 	}
-	defer rows.Close()
 
-	var orders []domain.Order
-	for rows.Next() {
-		var o domain.Order
-		if err := rows.Scan(&o.ID, &o.UserID, &o.Status, &o.TotalCents, &o.CreatedAt, &o.UpdatedAt); err != nil {
-			return nil, 0, fmt.Errorf("scan order: %w", err)
-		}
-		items, err := r.getOrderItems(ctx, o.ID)
+	orders := make([]domain.Order, 0, len(orderRows))
+	for _, orderRow := range orderRows {
+		itemRows, err := r.queries.GetOrderItems(ctx, orderRow.ID)
 		if err != nil {
-			return nil, 0, err
+			return nil, 0, fmt.Errorf("list order items: %w", err)
 		}
-		o.Items = items
-		orders = append(orders, o)
+		items := make([]domain.OrderItem, len(itemRows))
+		for i, row := range itemRows {
+			items[i] = toOrderItem(row)
+		}
+		orders = append(orders, domain.Order{
+			ID:         orderRow.ID,
+			UserID:     orderRow.UserID,
+			Status:     orderRow.Status,
+			TotalCents: orderRow.TotalCents,
+			Items:      items,
+			CreatedAt:  orderRow.CreatedAt.Time,
+			UpdatedAt:  orderRow.UpdatedAt.Time,
+		})
 	}
-	if err := rows.Err(); err != nil {
-		return nil, 0, fmt.Errorf("iterate orders: %w", err)
-	}
-	return orders, total, nil
+	return orders, int(total), nil
 }
 
 func (r *OrderRepository) UpdateStatus(ctx context.Context, id, status string) (domain.Order, error) {
-	var order domain.Order
-	err := r.pool.QueryRow(ctx,
-		`UPDATE orders SET status = $1, updated_at = now()
-		 WHERE id = $2
-		 RETURNING id, user_id, status, total_cents, created_at, updated_at`,
-		status, id,
-	).Scan(&order.ID, &order.UserID, &order.Status, &order.TotalCents, &order.CreatedAt, &order.UpdatedAt)
+	orderRow, err := r.queries.UpdateOrderStatus(ctx, db.UpdateOrderStatusParams{
+		Status: status,
+		ID:     id,
+	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return domain.Order{}, fmt.Errorf("update order status %s: %w", id, domain.ErrNotFound)
@@ -171,10 +158,56 @@ func (r *OrderRepository) UpdateStatus(ctx context.Context, id, status string) (
 		return domain.Order{}, fmt.Errorf("update order status: %w", err)
 	}
 
-	items, err := r.getOrderItems(ctx, id)
+	itemRows, err := r.queries.GetOrderItems(ctx, id)
 	if err != nil {
-		return domain.Order{}, err
+		return domain.Order{}, fmt.Errorf("list order items: %w", err)
 	}
-	order.Items = items
-	return order, nil
+
+	items := make([]domain.OrderItem, len(itemRows))
+	for i, row := range itemRows {
+		items[i] = toOrderItem(row)
+	}
+
+	return domain.Order{
+		ID:         orderRow.ID,
+		UserID:     orderRow.UserID,
+		Status:     orderRow.Status,
+		TotalCents: orderRow.TotalCents,
+		Items:      items,
+		CreatedAt:  orderRow.CreatedAt.Time,
+		UpdatedAt:  orderRow.UpdatedAt.Time,
+	}, nil
+}
+
+func toOrderItem(row db.OrderItem) domain.OrderItem {
+	return domain.OrderItem{
+		ID:             row.ID,
+		OrderID:        row.OrderID,
+		ProductID:      row.ProductID,
+		ProductName:    row.ProductName,
+		Quantity:       row.Quantity,
+		UnitPriceCents: row.UnitPriceCents,
+	}
+}
+
+func nullableString(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}
+
+func stringToUUID(s string) pgtype.UUID {
+	if s == "" {
+		return pgtype.UUID{}
+	}
+	cleaned := strings.ReplaceAll(s, "-", "")
+	if len(cleaned) != 32 {
+		return pgtype.UUID{}
+	}
+	var b [16]byte
+	if _, err := hex.Decode(b[:], []byte(cleaned)); err != nil {
+		return pgtype.UUID{}
+	}
+	return pgtype.UUID{Bytes: b, Valid: true}
 }
