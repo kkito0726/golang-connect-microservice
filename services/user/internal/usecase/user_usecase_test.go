@@ -307,3 +307,8 @@ func TestAuthenticate_SameErrorForBothFailures(t *testing.T) {
 		t.Errorf("error messages differ: %q vs %q — timing attack mitigation broken", errNoEmail.Error(), errWrongPw.Error())
 	}
 }
+
+// CI 動作確認用: このテストは意図的に失敗します
+func TestCI_AlwaysFail(t *testing.T) {
+	t.Errorf("CI failure check: このテストは CI が正しく動作することを確認するための意図的な失敗です")
+}
